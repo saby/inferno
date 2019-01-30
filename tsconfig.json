@@ -88,5 +88,8 @@
   "include": [
     "packages/*/src",
     "packages/*/__tests__"
+  ],
+  "exclude": [
+    "packages/inferno-wasaby/"
   ]
 }
