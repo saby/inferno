@@ -6,6 +6,7 @@ import { mount } from './mounting';
 import { patch } from './patching';
 import { remove } from './unmounting';
 import { callAll, options, EMPTY_OBJ } from './utils/common';
+import { getFullMarkup } from 'inferno-wasaby'
 
 const hasDocumentAvailable: boolean = typeof document !== 'undefined';
 
@@ -86,9 +87,11 @@ export function render(
   parentDOM: Element | SVGAElement | ShadowRoot | DocumentFragment | HTMLElement | Node | null,
   callback: Function | null = null,
   context: any = EMPTY_OBJ,
-  isRootStart?: boolean
+  isRootStart?: boolean,
+  controlNode?: any
 ): void {
-  __render(input, parentDOM, callback, context, isRootStart);
+  
+  __render(getFullMarkup(controlNode, input), parentDOM, callback, context, isRootStart);
 }
 
 export function createRenderer(parentDOM?) {
