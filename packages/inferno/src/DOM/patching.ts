@@ -11,6 +11,7 @@ import { handleComponentInput, renderNewInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
 import { mountRef, unmountRef } from '../core/refs';
 
+
 function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[]) {
   unmount(lastVNode);
 
@@ -471,6 +472,9 @@ function patchFunctionalComponent(lastVNode, nextVNode, parentDOM, context, isSV
   }
 }
 
+// @ts-ignore
+const ie10or11 = Env.detection.isIE10 || Env.detection.isIE11;
+
 function patchText(lastVNode: VNode, nextVNode: VNode, parentDOM: Element) {
   const nextText = unescape(nextVNode.children as string);
   const dom = lastVNode.dom;
@@ -479,11 +483,10 @@ function patchText(lastVNode: VNode, nextVNode: VNode, parentDOM: Element) {
     // inner text has to be just for IE 10 and for EmptyTextNode
     // EmptyTextNode - implementation of empty string value
     // You can't set nodeValue property in EmptyTextNode
-    // @ts-ignore
-    if (Env.detection.isIE10) {
+    if (ie10or11) {
       if (dom && dom.parentNode) {
-        // @ts-ignore
-        if (Env.detection.isIE10 || dom.nodeValue === '') {
+  
+        if (ie10or11 || dom.nodeValue === '') {
           // @ts-ignore
           dom.parentNode.innerText = nextText;
         } else {
