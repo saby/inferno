@@ -485,8 +485,8 @@ function patchText(lastVNode: VNode, nextVNode: VNode, parentDOM: Element) {
     // You can't set nodeValue property in EmptyTextNode
     if (ie10or11) {
       if (dom && dom.parentNode) {
-  
-        if (ie10or11 || dom.nodeValue === '') {
+        // @ts-ignore
+        if (Env.detection.isIE10 || dom.nodeValue === '') {
           // @ts-ignore
           dom.parentNode.innerText = nextText;
         } else {
