@@ -207,33 +207,45 @@ function afterMountProcess(controlNode) {
 
 export function mountWasabyCallback(controlNode) {
   return function () {
+      if (controlNode.compound) {
+        // for an old control, just create an instance and hook it up to the element
+        var
+          options = controlNode.options,
+          element = controlNode.markup.dom;
 
-      // _reactiveStart means starting of monitor change in properties
-      controlNode.control._reactiveStart = true;
-      if (!controlNode.control._mounted && !controlNode.control._unmounted) {
-          if (controlNode.hasCompound) {
-              // @ts-ignore
-              runDelayed.default(function () {
-                  afterMountProcess(controlNode);
-              });
-          } else {
-              afterMountProcess(controlNode);
-          }
+        options.element = element;
+        options.hasMarkup = true;
+        options.parent = null;
+
+        controlNode.control = new controlNode.controlClass(options);
       } else {
-          /**
-           * TODO: удалить после синхронизации с контролами
-           */
-          try {
-              if (!controlNode.control._destroyed) {
+        // _reactiveStart means starting of monitor change in properties
+        controlNode.control._reactiveStart = true;
+        if (!controlNode.control._mounted && !controlNode.control._unmounted) {
+            if (controlNode.hasCompound) {
                 // @ts-ignore
-                const afterUpdateResult = controlNode.control._afterUpdate && controlNode.control._afterUpdate(controlNode.oldOptions || controlNode.options, controlNode.oldContext);
-              }
-          } catch (error) {
-              // Logger.catchLifeCircleErrors('_afterUpdate', error, controlNode.control._moduleName);
-          } finally {
-              // We need controlNode.oldOptions only in _afterUpdate method. Can delete them from node after using.
-              delete controlNode.oldOptions;
-          }
+                runDelayed.default(function () {
+                    afterMountProcess(controlNode);
+                });
+            } else {
+                afterMountProcess(controlNode);
+            }
+        } else {
+            /**
+             * TODO: удалить после синхронизации с контролами
+             */
+            try {
+                if (!controlNode.control._destroyed) {
+                  // @ts-ignore
+                  const afterUpdateResult = controlNode.control._afterUpdate && controlNode.control._afterUpdate(controlNode.oldOptions || controlNode.options, controlNode.oldContext);
+                }
+            } catch (error) {
+                // Logger.catchLifeCircleErrors('_afterUpdate', error, controlNode.control._moduleName);
+            } finally {
+                // We need controlNode.oldOptions only in _afterUpdate method. Can delete them from node after using.
+                delete controlNode.oldOptions;
+            }
+        }
       }
   }
 }
@@ -426,13 +438,13 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
     vNode.instance = controlNode;
     vNode.instance.parentDOM = parentDOM;
     vNode.carrier = carrier;
-  } else {
+  } else if (!controlNode.compound) {
     controlNode.markup = getDecoratedMarkup(controlNode, isRootStart);
     if (controlNode.markup && controlNode.markup.type && controlNode.markup.type === 'invisible-node') {
       // @ts-ignore
       setHookFunction = Hooks.setControlNodeHook(controlNode);
       if (controlNode.markup.ref && parentVNode.ref) {
-          const cnmRef = controlNode.markup.ref; 
+          const cnmRef = controlNode.markup.ref;
           controlNode.markup.ref = function (domNode) {
               cnmRef(domNode);
               parentVNode.ref(domNode);
@@ -456,7 +468,7 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
       // @ts-ignore
       setHookFunction = Hooks.setControlNodeHook(controlNode);
       if (controlNode.markup.ref && vNode.ref) {
-          const cnmRef = controlNode.markup.ref; 
+          const cnmRef = controlNode.markup.ref;
           controlNode.markup.ref = function (domNode) {
               cnmRef(domNode);
               vNode.ref(domNode);
@@ -474,6 +486,10 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
       vNode.instance.parentDOM = parentDOM;
       vNode.instance.markup.ref = controlNodeEventRef[4];
     }
+  } else {
+    vNode.instance = controlNode;
+    vNode.fakeDom = controlNode.markup;
+    vNode.instance.parentDOM = parentDOM;
   }
   return vNode;
 }
