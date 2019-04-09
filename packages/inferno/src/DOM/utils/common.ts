@@ -64,8 +64,13 @@ export function findDOMfromVNode(vNode: VNode, start: boolean) {
     } else if (flags & VNodeFlags.ComponentClass) {
       vNode = (children as any).$LI;
     } else if (flags & VNodeFlags.WasabyControl) {
-      // @ts-ignore
-      return vNode.instance.element;
+      if (!vNode.compound) {
+        // @ts-ignore
+        return vNode.instance.element;
+      } else {
+        // @ts-ignore
+        return vNode.instance.markup.dom;
+      }
     } else {
       vNode = children;
     }
@@ -79,6 +84,16 @@ export function removeVNodeDOM(vNode: VNode, parentDOM: Element) {
 
   if (flags & VNodeFlags.DOMRef) {
     removeChild(parentDOM, vNode.dom as Element);
+  } else if (flags & VNodeFlags.WasabyControl) {
+    // CompoundControls remove their containers automatically when destroyed
+    // @ts-ignore
+    if (!vNode.compound) {
+      // @ts-ignore
+      const realDom = vNode.instance && vNode.instance.markup && vNode.instance.markup.dom;
+      if (realDom) {
+        removeChild(parentDOM, realDom);
+      }
+    }
   } else {
     const children = vNode.children as any;
 

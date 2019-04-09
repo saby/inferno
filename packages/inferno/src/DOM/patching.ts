@@ -41,8 +41,8 @@ export function patch(
   isSVG: boolean,
   nextNode: Element | null,
   lifecycle: Function[],
-  environment?: any, 
-  parentControlNode?: any, 
+  environment?: any,
+  parentControlNode?: any,
   parentVNode?: any
 ) {
   const nextFlags = (nextVNode.flags |= VNodeFlags.InUse);
@@ -69,7 +69,7 @@ export function patch(
            dom = lastVNode.dom = elements[0];
         }
         for(let k=0; k<elements.length; k++) {
-            if (elements[k].attributes.key 
+            if (elements[k].attributes.key
                 && elements[k].attributes.key.value === lastVNode.key) {
                 dom = lastVNode.dom = elements[k];
                 break;
@@ -77,7 +77,7 @@ export function patch(
         }
         nextVNode.dom = dom;
      }
-  
+
       // Last vNode is not in use, it has crashed at application level. Just mount nextVNode and ignore last one
       mount(nextVNode, parentDOM, context, isSVG, nextNode, lifecycle, parentControlNode, parentVNode);
     }
@@ -241,8 +241,8 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object
       null,
       lastVNode,
       lifecycle,
-      environment, 
-      parentControlNode, 
+      environment,
+      parentControlNode,
       nextVNode
     );
   }
@@ -279,8 +279,8 @@ function patchChildren(
   nextNode: Element | null,
   parentVNode: VNode,
   lifecycle: Function[],
-  environment?: any, 
-  parentControlNode?: any, 
+  environment?: any,
+  parentControlNode?: any,
   parentVNodeW?: any
 ) {
   switch (lastChildFlags) {
@@ -490,20 +490,20 @@ function patchClassComponent(lastVNode, nextVNode, parentDOM, context, isSVG: bo
 function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode, parentVNode) {
   // для не-compound контролов делаем проверку изменения служебных опций
   // @ts-ignore
-  const changedInternalOptions = DC.getChangedOptions(nextVNode.controlInternalProperties, lastVNode.internalOptions);    
+  const changedInternalOptions = DC.getChangedOptions(nextVNode.controlInternalProperties, lastVNode.internalOptions);
   // Атрибуты тоже учавствуют в DirtyChecking
   // @ts-ignore
   const changedOptions = DC.getChangedOptions(
-         nextVNode.controlProperties, 
-         lastVNode.controlProperties, 
-         nextVNode.compound, 
+         nextVNode.controlProperties,
+         lastVNode.controlProperties,
+         nextVNode.compound,
          lastVNode.instance.optionsVersions
-      ); 
+      );
   // @ts-ignore
   const changedContext = DC.getChangedOptions(
-          nextVNode.context, 
-          lastVNode.instance.context, 
-          false, 
+          nextVNode.context,
+          lastVNode.instance.context,
+          false,
           lastVNode.instance.contextVersions
       );
   const oldOptions = lastVNode.instance.options;
@@ -521,16 +521,17 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
   const newChildNodeContext = nextVNode.context || {};
   // @ts-ignore
   let beforeUpdateResults;
-  const newOptions = nextVNode.compound ? 
+  const newOptions = nextVNode.compound ?
       // @ts-ignore
-             Compatible.createCombinedOptions(nextVNode.controlProperties, nextVNode.controlInternalProperties) 
+             Compatible.createCombinedOptions(nextVNode.controlProperties, nextVNode.controlInternalProperties)
              : nextVNode.controlProperties;
-      
+
   // Атрибуты тоже учавствуют в DirtyChecking
   if (changedOptions || changedInternalOptions || changedAttrs || changedContext) {
+    if (!nextVNode.compound) {
       try {
           let resolvedContext;
-         
+
          //  Logger.log('DirtyChecking (update node with changed)', [
          //      '',
          //      '',
@@ -582,6 +583,13 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
       lifecycle.push(mountWasabyCallback(childControlNode));
       patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextVNode, lifecycle, environment, nextVNode.instance, nextInput);
       nextVNode.instance.markup = nextInput;
+    } else {
+      if (changedOptions) {
+        childControl.setProperties(changedOptions);
+        childControlNode.options = childControl._options;
+      }
+      nextVNode.instance = childControlNode;
+    }
   } else {
       nextVNode.instance = lastVNode.instance;
   }
@@ -643,7 +651,7 @@ function patchText(lastVNode: VNode, nextVNode: VNode, parentDOM: Element) {
     } else {
       (dom as Element).nodeValue = nextText;
     }
-    
+
   }
 
   nextVNode.dom = dom;
@@ -709,8 +717,8 @@ function patchKeyedChildren(
   outerEdge: Element | null,
   parentVNode: VNode,
   lifecycle,
-  environment?: any, 
-  parentControlNode?: any, 
+  environment?: any,
+  parentControlNode?: any,
   parentVNodeW?: any
 ) {
   let aEnd = aLength - 1;
@@ -907,7 +915,7 @@ function patchKeyedChildren(
             b[pos] = bNode = directClone(bNode);
           }
           nextPos = pos + 1;
-          mount(bNode, dom, context, isSVG, nextPos < bLength ? findDOMfromVNode(b[nextPos], true) : outerEdge, lifecycle, environment, parentControlNode, parentVNodeW);
+          mount(bNode, dom, context, isSVG, nextPos < bLength ? findDOMfromVNode(b[nextPos], true) : outerEdge, lifecycle, false /* isRootStart */, environment, parentControlNode, parentVNodeW);
         }
       }
     }

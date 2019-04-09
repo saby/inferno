@@ -21,7 +21,7 @@ function collectObjectVersions(collection) {
          if (collection[key] && collection[key].getVersion) {
             versions[key] = collection[key].getVersion();
          } else if (collection[key] && collection[key].isDataArray) {
-            
+
             // тут нужно собрать версии всех объектов,
             // которые используются внутри контентных опций
             // здесь учитывается кейс, когда внутри контентной опции
@@ -95,6 +95,7 @@ export function createNode(controlClass_, options, key, environment, parentNode,
          // Создаем виртуальную ноду для compound контрола
          // @ts-ignore
          result = Compatible.createCompoundControlNode(controlClass_, controlCnstr, [], userOptions, internalOptions, key, parentNode, vnode, MarkupGeneratorText.default);
+         result.environment = environment;
          return result;
       } else {
       // Создаем виртуальную ноду для не-compound контрола
@@ -109,7 +110,7 @@ export function createNode(controlClass_, options, key, environment, parentNode,
       let context;
       let instCompat;
       let defaultOptions;
-         
+
          if (typeof controlClass_ === 'function') {
             // создаем инстанс компонента
             // @ts-ignore
@@ -145,7 +146,7 @@ export function createNode(controlClass_, options, key, environment, parentNode,
          params = getControlNodeParams(control, environment);
 
          result = new WCN(
-            options, 
+            options,
             control,
             controlCnstr,
             optionsWithState,
@@ -163,7 +164,7 @@ export function createNode(controlClass_, options, key, environment, parentNode,
 
          environment.setupControlNode(result);
 
-         
+
 
          return result;
 
@@ -171,14 +172,14 @@ export function createNode(controlClass_, options, key, environment, parentNode,
 }
 
 function WCN(
-   options, 
-   control, 
-   controlCnstr, 
-   optionsWithState, 
+   options,
+   control,
+   controlCnstr,
+   optionsWithState,
    internalOptions,
    optionsVersions,
-   serialized, 
-   parentNode, 
+   serialized,
+   parentNode,
    key,
    invisible,
    params,

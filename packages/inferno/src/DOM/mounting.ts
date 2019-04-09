@@ -29,7 +29,7 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
     mountPortal(vNode, context, parentDOM, nextNode, lifecycle);
     // @ts-ignore
   } else if (vNode instanceof RawMarkupNode) {
-    return mountHTML(vNode, parentDOM);
+    return mountHTML(vNode, parentDOM, nextNode);
   } else if (flags & VNodeFlags.WasabyControl || flags === 147456) {
     mountWasabyControl(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentVNode);
   } else if (flags & VNodeFlags.TemplateWasabyNode) {
@@ -48,11 +48,11 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
   }
 }
 
-export function mountHTML(vNode: VNode, parentDom: Element | null): any {
+export function mountHTML(vNode: VNode, parentDom: Element | null, nextNode?: Element | null): any {
   // @ts-ignore
   const dom = (vNode.dom = $(vNode.markup)[0]);
   if (!isNull(parentDom)) {
-    insertOrAppend(parentDom, dom, null);
+    insertOrAppend(parentDom, dom, nextNode);
   }
   return dom;
 
@@ -488,7 +488,6 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
     }
   } else {
     vNode.instance = controlNode;
-    vNode.fakeDom = controlNode.markup;
     vNode.instance.parentDOM = parentDOM;
   }
   return vNode;
