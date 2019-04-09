@@ -583,6 +583,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
       // @ts-ignore
       const nextInput = getDecoratedMarkup(childControlNode, false);
       nextVNode.instance = childControlNode;
+      nextInput.ref = nextVNode.instance.markup.ref;
       lifecycle.push(mountWasabyCallback(childControlNode));
       patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextVNode, lifecycle, environment, nextVNode.instance, nextInput);
       nextVNode.instance.markup = nextInput;

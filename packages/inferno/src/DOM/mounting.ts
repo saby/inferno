@@ -405,9 +405,10 @@ function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRootStart,
     setHookFunction = Hooks.setControlNodeHook(controlNode);
     if (controlNode.markup.ref && parentVNode.ref) {
        const cnmRef = controlNode.markup.ref;
+       // @ts-ignore
        controlNode.markup.ref = function (domNode) {
-          cnmRef(domNode);
-          parentVNode.ref(domNode);
+          cnmRef(parentDOM);
+          parentVNode.ref(parentDOM);
        }
     }
     controlNodeRef = setHookFunction(controlNode.markup.type, controlNode.markup.props, controlNode.markup.children, controlNode.key, controlNode, parentVNode.ref || controlNode.markup.ref);
@@ -502,10 +503,11 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
       // @ts-ignore
       setHookFunction = Hooks.setControlNodeHook(controlNode);
       if (controlNode.markup.ref && parentVNode.ref) {
-          const cnmRef = controlNode.markup.ref; 
+          const cnmRef = controlNode.markup.ref;
+          // @ts-ignore 
           controlNode.markup.ref = function (domNode) {
-              cnmRef(domNode);
-              parentVNode.ref(domNode);
+              cnmRef(parentDOM);
+              parentVNode.ref(parentDOM);
           }
       }
       controlNodeRef = setHookFunction(controlNode.markup.type, controlNode.markup.props, controlNode.markup.children, controlNode.key, controlNode, parentVNode.ref || controlNode.markup.ref);
