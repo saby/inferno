@@ -89,8 +89,8 @@ export function removeVNodeDOM(vNode: VNode, parentDOM: Element) {
     // @ts-ignore
     if (!vNode.compound) {
       // @ts-ignore
-      const realDom = vNode.instance && vNode.instance.markup && vNode.instance.markup.dom;
-      if (realDom) {
+      const realDom = vNode.instance && vNode.instance.element;
+      if (realDom && realDom.parentElement && parentDOM.contains(realDom)) {
         removeChild(parentDOM, realDom);
       }
     }
