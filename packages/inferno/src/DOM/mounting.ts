@@ -7,7 +7,7 @@ import { mountProps } from './props';
 import { createClassComponentInstance, handleComponentInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
 import { mountRef } from '../core/refs';
-import { createNode, getDecoratedMarkup, nextTickWasaby } from '../wasaby/control';
+import { createNode, getDecoratedMarkup, nextTickWasaby, collectObjectVersions } from '../wasaby/control';
 // @ts-ignore
 import { createWriteStream } from 'fs';
 export const QUEUE = [];
@@ -606,6 +606,10 @@ export function getMarkupForTemplatedNode(vNode) {
 
 // @ts-ignore
 export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode) {
+  // check current context field versions
+  vNode.optionsVersions = collectObjectVersions(vNode.controlProperties);
+  // check current context field versions
+  vNode.contextVersions = collectObjectVersions(vNode.context);
   vNode.markup = getMarkupForTemplatedNode(vNode);
   vNode.markup.forEach(function (node) {
       if (node.hprops) {

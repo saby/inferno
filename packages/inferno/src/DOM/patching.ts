@@ -10,7 +10,7 @@ import { patchProp } from './props';
 import { handleComponentInput, renderNewInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
 import { mountRef, unmountRef } from '../core/refs';
-import { getDecoratedMarkup } from '../wasaby/control'
+import { getDecoratedMarkup, collectObjectVersions } from '../wasaby/control'
 
 
 function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], environment?: any, parentControlNode?: any) {
@@ -372,6 +372,9 @@ function patchChildren(
 // @ts-ignore
 function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode) {
   // @ts-ignore
+  nextVNode.optionsVersions = collectObjectVersions(nextVNode.controlProperties);    // check current context field versions
+    // check current context field versions
+  nextVNode.contextVersions = collectObjectVersions(nextVNode.context);
   const changedOptions = DC.getChangedOptions(nextVNode.controlProperties, lastVNode.controlProperties, false, lastVNode.optionsVersions);
   const oldAttrs = lastVNode.attributes.attributes;
   const newAttrs = nextVNode.attributes.attributes;

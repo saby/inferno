@@ -14,7 +14,7 @@ function getControlNodeParams(control, environment) {
    };
 }
 
-function collectObjectVersions(collection) {
+export function collectObjectVersions(collection) {
    const versions = {};
    for (const key in collection) {
       if (collection.hasOwnProperty(key)) {
