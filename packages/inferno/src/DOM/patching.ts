@@ -375,6 +375,7 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
   nextVNode.optionsVersions = collectObjectVersions(nextVNode.controlProperties);    // check current context field versions
     // check current context field versions
   nextVNode.contextVersions = collectObjectVersions(nextVNode.context);
+  // @ts-ignore
   const changedOptions = DC.getChangedOptions(nextVNode.controlProperties, lastVNode.controlProperties, false, lastVNode.optionsVersions);
   const oldAttrs = lastVNode.attributes.attributes;
   const newAttrs = nextVNode.attributes.attributes;
