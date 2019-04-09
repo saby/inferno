@@ -546,7 +546,8 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
           childControl.saveInheritOptions(childControlNode.inheritOptions);
           // @ts-ignore
           resolvedContext = ContextResolver.resolveContext(childControlNode.controlClass, newChildNodeContext, childControlNode.control);
-          // Utils_1.OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, childControlNode.parent.control._moduleName);    // Forbid force update in the time between _beforeUpdate and _afterUpdate
+          // @ts-ignore
+          OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, parentControlNode.control._moduleName);
           // Forbid force update in the time between _beforeUpdate and _afterUpdate
           // @ts-ignore
           ReactiveObserver.pauseReactive(childControl, () => {
