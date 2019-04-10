@@ -685,7 +685,7 @@ function patchNonKeyedChildren(
       nextChild = nextChildren[i] = directClone(nextChild);
     }
 
-    patch(lastChild, nextChild, dom, context, isSVG, nextNode, lifecycle);
+    patch(lastChild, nextChild, dom, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
     lastChildren[i] = nextChild;
   }
   if (lastChildrenLength < nextChildrenLength) {
@@ -695,7 +695,7 @@ function patchNonKeyedChildren(
       if (nextChild.flags & VNodeFlags.InUse) {
         nextChild = nextChildren[i] = directClone(nextChild);
       }
-      mount(nextChild, dom, context, isSVG, nextNode, lifecycle);
+      mount(nextChild, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNodeW);
     }
   } else if (lastChildrenLength > nextChildrenLength) {
     for (i = commonLength; i < lastChildrenLength; ++i) {
