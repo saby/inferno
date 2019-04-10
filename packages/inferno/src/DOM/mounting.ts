@@ -1,4 +1,4 @@
-import { isFunction, isNull, isNullOrUndef, isString, isStringOrNumber, throwError, unescape } from 'inferno-shared';
+import { isFunction, isNull, isNullOrUndef, isString, isStringOrNumber, throwError, warning, unescape } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { createVoidVNode, directClone, createVNode, getFlagsForElementVnode } from '../core/implementation';
 import { VNode } from '../core/types';
@@ -360,10 +360,45 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
   }
 }
 
+/**
+ * time interval in which it will check count of applyWasabyState calls
+ * @type {number}
+ */
+const MAX_UPDATE_INTERVAL = 10000;
+/**
+ * maximum count of applyWasabyState calls which is considered normal in MAX_UPDATE_INTERVAL time interval
+ * @type {number}
+ */
+const MAX_UPDATE_COUNT = 10;
+/**
+ * check if it's too many count of applyWasabyState calls in MAX_UPDATE_INTERVAL time interval
+ * @param control
+ */
+function checkUpdateCount(control) {
+  if (document && document.cookie && document.cookie.indexOf('s3debug=true') !== -1) {
+    if (!control.hasOwnProperty('_$forceUpdateLog')) {
+      control._$forceUpdateLog = [];
+    }
+    control._$forceUpdateLog.push(Date.now());
+    if (control._$forceUpdateLog.length >= MAX_UPDATE_COUNT) {
+      const update1 = control._$forceUpdateLog[control._$forceUpdateLog.length - MAX_UPDATE_COUNT];
+      const update2 = control._$forceUpdateLog[control._$forceUpdateLog.length - 1];
+
+      if (update2 - update1 < MAX_UPDATE_INTERVAL) {
+        warning('too many calls of applyWasabyState!!!');
+      }
+    }
+    if (control._$forceUpdateLog.length >= 10*MAX_UPDATE_COUNT) {
+      control._$forceUpdateLog = control._$forceUpdateLog.slice(control._$forceUpdateLog.length - MAX_UPDATE_COUNT, control._$forceUpdateLog.length);
+    }
+  }
+}
+
 function applyWasabyState(component, pNode?) {
   const lifecycle = [];
   const controlContainer = (component.control._container && (component.control._container[0] || component.control._container));
   updateWasabyControl(component, pNode || controlContainer, lifecycle);
+  checkUpdateCount(component.control);
   // @ts-ignore
   if (QUEUE.indexOf(component) === -1 && QUEUE.push(component) === 1) {
     nextTickWasaby(rerenderWasaby);
