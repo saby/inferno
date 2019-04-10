@@ -53,7 +53,12 @@ function isSamePropsInnerHTML(dom: Element, props): boolean {
 function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
   const yVNode = _CWCI(vNode, parentDOM, isSVG, {}, lifecycle, isRootStart, environment, parentControlNode, parentVNode, true);
   const input = yVNode.instance.markup;
-  let currentNode = currentDom;
+  let currentNode;
+  if (input.type === 'invisible-node') {
+    currentNode = parentDOM;
+  } else {
+    currentNode = currentDom;
+  }
   if (yVNode.carrier && yVNode.carrier.then) {
       if (yVNode.instance.control && yVNode.instance.control._forceUpdate) {
          yVNode.instance.control._forceUpdate = function (memo) {

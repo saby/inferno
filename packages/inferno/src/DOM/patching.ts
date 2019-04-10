@@ -546,7 +546,8 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
           childControl.saveInheritOptions(childControlNode.inheritOptions);
           // @ts-ignore
           resolvedContext = ContextResolver.resolveContext(childControlNode.controlClass, newChildNodeContext, childControlNode.control);
-          // Utils_1.OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, childControlNode.parent.control._moduleName);    // Forbid force update in the time between _beforeUpdate and _afterUpdate
+          // @ts-ignore
+          OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, parentControlNode.control._moduleName);
           // Forbid force update in the time between _beforeUpdate and _afterUpdate
           // @ts-ignore
           ReactiveObserver.pauseReactive(childControl, () => {
@@ -583,6 +584,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
       // @ts-ignore
       const nextInput = getDecoratedMarkup(childControlNode, false);
       nextVNode.instance = childControlNode;
+      nextInput.ref = nextVNode.instance.markup.ref;
       lifecycle.push(mountWasabyCallback(childControlNode));
       patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextVNode, lifecycle, environment, nextVNode.instance, nextInput);
       nextVNode.instance.markup = nextInput;
@@ -683,7 +685,7 @@ function patchNonKeyedChildren(
       nextChild = nextChildren[i] = directClone(nextChild);
     }
 
-    patch(lastChild, nextChild, dom, context, isSVG, nextNode, lifecycle);
+    patch(lastChild, nextChild, dom, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
     lastChildren[i] = nextChild;
   }
   if (lastChildrenLength < nextChildrenLength) {
@@ -693,7 +695,7 @@ function patchNonKeyedChildren(
       if (nextChild.flags & VNodeFlags.InUse) {
         nextChild = nextChildren[i] = directClone(nextChild);
       }
-      mount(nextChild, dom, context, isSVG, nextNode, lifecycle);
+      mount(nextChild, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNodeW);
     }
   } else if (lastChildrenLength > nextChildrenLength) {
     for (i = commonLength; i < lastChildrenLength; ++i) {
