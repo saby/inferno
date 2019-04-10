@@ -487,6 +487,9 @@ function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRootStart,
 };
 
 // @ts-ignore
+const Slr = new Serializer();
+
+// @ts-ignore
 export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment?, parentControlNode?, parentVNode?, fromHyd?) {
   let controlNode;
   let carrier;
@@ -506,7 +509,7 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
         const control = controlNode.control;
         const rstate = controlNode.key ? findTopConfig(controlNode.key) : '';
         if (control._beforeMountLimited) {
-            carrier = getStateReadyOrCall(rstate, control, vNode, {});
+            carrier = getStateReadyOrCall(rstate, control, vNode, Slr);
         }
         if (carrier) {
             controlNode.receivedState = carrier;
@@ -584,8 +587,6 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
   }
   return vNode;
 }
-
-// var Slr = new Serializer();
 
 export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG: boolean, nextNode: Element | null, lifecycle: Function[], isRootStart?: boolean, environment?: any, parentVNode?: any) {
   let VirtualNode = createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, undefined, parentVNode);
