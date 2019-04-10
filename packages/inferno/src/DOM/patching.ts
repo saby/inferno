@@ -10,7 +10,7 @@ import { patchProp } from './props';
 import { handleComponentInput, renderNewInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
 import { mountRef, unmountRef } from '../core/refs';
-import { getDecoratedMarkup } from '../wasaby/control'
+import { getDecoratedMarkup, collectObjectVersions } from '../wasaby/control'
 
 
 function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], environment?: any, parentControlNode?: any) {
@@ -79,7 +79,7 @@ export function patch(
      }
   
       // Last vNode is not in use, it has crashed at application level. Just mount nextVNode and ignore last one
-      mount(nextVNode, parentDOM, context, isSVG, nextNode, lifecycle, parentControlNode, parentVNode);
+      mount(nextVNode, parentDOM, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNode);
     }
   } else if (nextFlags & VNodeFlags.Element) {
     patchElement(lastVNode, nextVNode, context, isSVG, nextFlags, lifecycle, environment, parentControlNode);
@@ -371,6 +371,10 @@ function patchChildren(
 
 // @ts-ignore
 function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode) {
+  // @ts-ignore
+  nextVNode.optionsVersions = collectObjectVersions(nextVNode.controlProperties);    // check current context field versions
+    // check current context field versions
+  nextVNode.contextVersions = collectObjectVersions(nextVNode.context);
   // @ts-ignore
   const changedOptions = DC.getChangedOptions(nextVNode.controlProperties, lastVNode.controlProperties, false, lastVNode.optionsVersions);
   const oldAttrs = lastVNode.attributes.attributes;
