@@ -380,10 +380,6 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
       // nextVNode.instance = controlNode;
       nextInput.ref = controlNode.markup.ref;
       // @ts-ignore
-      // FIX ME FIX ME FIX ME
-      // This function is defined in 'patching.js' which we can not import because of circular dependencies.
-      // If we call 'patch' here, TS compiler compiles the original patch function as 'patch$1' and this code fails.
-      // Find a way to require the correct function
       patch(controlNode.markup, nextInput, parentDOM, {}, false, controlElement, lifecycle, controlNode.environment, controlNode);
       controlNode.markup = nextInput;
       controlNode.fullMarkup = controlNode.markup;
