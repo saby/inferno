@@ -5,6 +5,25 @@ import { delegatedEvents, handleEvent } from './events/delegation';
 import { EMPTY_OBJ, findDOMfromVNode, removeVNodeDOM } from './utils/common';
 import { unmountRef } from '../core/refs';
 
+function compoundUnmountProcess(controlNode) {
+  var
+      control = controlNode.control,
+      options = controlNode.options,
+      name = options.name,
+      logicParent = options.logicParent;
+
+  if (logicParent && name) {
+      if (logicParent._children && logicParent._children[name]) {
+          delete logicParent._children[name];
+      }
+      if (logicParent._nativeElements && logicParent._nativeElements[name]) {
+          delete logicParent._nativeElements[name];
+      }
+  }
+
+  control.destroy();
+}
+
 export function remove(vNode: VNode, parentDOM: Element | null) {
   unmount(vNode);
 
@@ -52,7 +71,7 @@ export function unmount(vNode) {
           vNode.instance.control.destroy();
       }
     } else {
-      vNode.instance.control.destroy();
+      compoundUnmountProcess(vNode.instance);
     }
   } else if (flags & VNodeFlags.TemplateWasabyNode) {
     unmountAllChildren(vNode.markup);

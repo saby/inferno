@@ -204,20 +204,35 @@ function afterMountProcess(controlNode) {
       // Logger.catchLifeCircleErrors('_afterMount', error, controlNode.control._moduleName);
   }
 }
+function compoundMountProcess(controlNode) {
+  var
+      control,
+      options = controlNode.options,
+      element = controlNode.markup.dom,
+      name = options.name,
+      logicParent = options.logicParent;
+
+  options.element = element;
+  options.hasMarkup = true;
+  options.parent = null;
+  controlNode.control = new controlNode.controlClass(options);
+
+  control = controlNode.control;
+
+  if (logicParent && name) {
+      if (logicParent._children) {
+          logicParent._children[name] = control;
+      }
+      if (logicParent._nativeElements) {
+          logicParent._nativeElements[name] = element;
+      }
+  }
+}
 
 export function mountWasabyCallback(controlNode) {
   return function () {
       if (controlNode.compound) {
-        // for an old control, just create an instance and hook it up to the element
-        var
-          options = controlNode.options,
-          element = controlNode.markup.dom;
-
-        options.element = element;
-        options.hasMarkup = true;
-        options.parent = null;
-
-        controlNode.control = new controlNode.controlClass(options);
+        compoundMountProcess(controlNode);
       } else {
         // _reactiveStart means starting of monitor change in properties
         controlNode.control._reactiveStart = true;
