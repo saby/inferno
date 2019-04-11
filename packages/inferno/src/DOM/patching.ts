@@ -10,7 +10,7 @@ import { patchProp } from './props';
 import { handleComponentInput, renderNewInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
 import { mountRef, unmountRef } from '../core/refs';
-import { getDecoratedMarkup } from '../wasaby/control'
+import { getDecoratedMarkup, collectObjectVersions } from '../wasaby/control'
 
 
 function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], environment?: any, parentControlNode?: any) {
@@ -79,7 +79,7 @@ export function patch(
      }
 
       // Last vNode is not in use, it has crashed at application level. Just mount nextVNode and ignore last one
-      mount(nextVNode, parentDOM, context, isSVG, nextNode, lifecycle, parentControlNode, parentVNode);
+      mount(nextVNode, parentDOM, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNode);
     }
   } else if (nextFlags & VNodeFlags.Element) {
     patchElement(lastVNode, nextVNode, context, isSVG, nextFlags, lifecycle, environment, parentControlNode);
@@ -372,6 +372,10 @@ function patchChildren(
 // @ts-ignore
 function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode) {
   // @ts-ignore
+  nextVNode.optionsVersions = collectObjectVersions(nextVNode.controlProperties);    // check current context field versions
+    // check current context field versions
+  nextVNode.contextVersions = collectObjectVersions(nextVNode.context);
+  // @ts-ignore
   const changedOptions = DC.getChangedOptions(nextVNode.controlProperties, lastVNode.controlProperties, false, lastVNode.optionsVersions);
   const oldAttrs = lastVNode.attributes.attributes;
   const newAttrs = nextVNode.attributes.attributes;
@@ -543,7 +547,8 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
           childControl.saveInheritOptions(childControlNode.inheritOptions);
           // @ts-ignore
           resolvedContext = ContextResolver.resolveContext(childControlNode.controlClass, newChildNodeContext, childControlNode.control);
-          // Utils_1.OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, childControlNode.parent.control._moduleName);    // Forbid force update in the time between _beforeUpdate and _afterUpdate
+          // @ts-ignore
+          OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, parentControlNode.control._moduleName);
           // Forbid force update in the time between _beforeUpdate and _afterUpdate
           // @ts-ignore
           ReactiveObserver.pauseReactive(childControl, () => {
@@ -580,6 +585,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
       // @ts-ignore
       const nextInput = getDecoratedMarkup(childControlNode, false);
       nextVNode.instance = childControlNode;
+      nextInput.ref = nextVNode.instance.markup.ref;
       lifecycle.push(mountWasabyCallback(childControlNode));
       patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextVNode, lifecycle, environment, nextVNode.instance, nextInput);
       nextVNode.instance.markup = nextInput;
@@ -687,7 +693,7 @@ function patchNonKeyedChildren(
       nextChild = nextChildren[i] = directClone(nextChild);
     }
 
-    patch(lastChild, nextChild, dom, context, isSVG, nextNode, lifecycle);
+    patch(lastChild, nextChild, dom, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
     lastChildren[i] = nextChild;
   }
   if (lastChildrenLength < nextChildrenLength) {
@@ -697,7 +703,7 @@ function patchNonKeyedChildren(
       if (nextChild.flags & VNodeFlags.InUse) {
         nextChild = nextChildren[i] = directClone(nextChild);
       }
-      mount(nextChild, dom, context, isSVG, nextNode, lifecycle);
+      mount(nextChild, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNodeW);
     }
   } else if (lastChildrenLength > nextChildrenLength) {
     for (i = commonLength; i < lastChildrenLength; ++i) {

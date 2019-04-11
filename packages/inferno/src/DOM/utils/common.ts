@@ -64,6 +64,7 @@ export function findDOMfromVNode(vNode: VNode, start: boolean) {
     } else if (flags & VNodeFlags.ComponentClass) {
       vNode = (children as any).$LI;
     } else if (flags & VNodeFlags.WasabyControl) {
+      // @ts-ignore
       if (!vNode.compound) {
         // @ts-ignore
         return vNode.instance.element;
