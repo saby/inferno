@@ -201,7 +201,8 @@ function afterMountProcess(controlNode) {
           controlNode.control._forceUpdate();
       }
   } catch (error) {
-      // Logger.catchLifeCircleErrors('_afterMount', error, controlNode.control._moduleName);
+      // @ts-ignore
+      Logger.catchLifeCircleErrors('_afterMount', error, controlNode.control._moduleName);
   }
 }
 function compoundMountProcess(controlNode) {
@@ -255,7 +256,8 @@ export function mountWasabyCallback(controlNode) {
                   const afterUpdateResult = controlNode.control._afterUpdate && controlNode.control._afterUpdate(controlNode.oldOptions || controlNode.options, controlNode.oldContext);
                 }
             } catch (error) {
-                // Logger.catchLifeCircleErrors('_afterUpdate', error, controlNode.control._moduleName);
+                // @ts-ignore
+                Logger.catchLifeCircleErrors('_afterUpdate', error, controlNode.control._moduleName);
             } finally {
                 // We need controlNode.oldOptions only in _afterUpdate method. Can delete them from node after using.
                 delete controlNode.oldOptions;
@@ -307,7 +309,8 @@ function getStateReadyOrCall(stateVar, control, vnode, serializer) {
       res = data ? control._beforeMountLimited(vnode.controlProperties, ctx, data) : control._beforeMountLimited(vnode.controlProperties, ctx);
   }
   catch (error) {
-      // Logger.catchLifeCircleErrors('_beforeMount', error, control._moduleName);
+      // @ts-ignore
+      Logger.catchLifeCircleErrors('_beforeMount', error, control._moduleName);
   }
   if (res && res.then) {
       res.then(function (resultDef) {
