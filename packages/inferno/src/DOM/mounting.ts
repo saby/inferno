@@ -29,7 +29,7 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
     mountPortal(vNode, context, parentDOM, nextNode, lifecycle);
     // @ts-ignore
   } else if (vNode instanceof RawMarkupNode) {
-    return mountHTML(vNode, parentDOM);
+    return mountHTML(vNode, parentDOM, nextNode);
   } else if (flags & VNodeFlags.WasabyControl || flags === 147456) {
     mountWasabyControl(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentVNode);
   } else if (flags & VNodeFlags.TemplateWasabyNode) {
@@ -48,11 +48,11 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
   }
 }
 
-export function mountHTML(vNode: VNode, parentDom: Element | null): any {
+export function mountHTML(vNode: VNode, parentDom: Element | null, nextNode?: Element | null): any {
   // @ts-ignore
   const dom = (vNode.dom = $(vNode.markup)[0]);
   if (!isNull(parentDom)) {
-    insertOrAppend(parentDom, dom, null);
+    insertOrAppend(parentDom, dom, nextNode);
   }
   return dom;
 
@@ -204,36 +204,63 @@ function afterMountProcess(controlNode) {
       // Logger.catchLifeCircleErrors('_afterMount', error, controlNode.control._moduleName);
   }
 }
+function compoundMountProcess(controlNode) {
+  var
+      control,
+      options = controlNode.options,
+      element = controlNode.markup.dom,
+      name = options.name,
+      logicParent = options.logicParent;
+
+  options.element = element;
+  options.hasMarkup = true;
+  options.parent = null;
+  controlNode.control = new controlNode.controlClass(options);
+
+  control = controlNode.control;
+
+  if (logicParent && name) {
+      if (logicParent._children) {
+          logicParent._children[name] = control;
+      }
+      if (logicParent._nativeElements) {
+          logicParent._nativeElements[name] = element;
+      }
+  }
+}
 
 export function mountWasabyCallback(controlNode) {
   return function () {
-
-      // _reactiveStart means starting of monitor change in properties
-      controlNode.control._reactiveStart = true;
-      if (!controlNode.control._mounted && !controlNode.control._unmounted) {
-          if (controlNode.hasCompound) {
-              // @ts-ignore
-              runDelayed.default(function () {
-                  afterMountProcess(controlNode);
-              });
-          } else {
-              afterMountProcess(controlNode);
-          }
+      if (controlNode.compound) {
+        compoundMountProcess(controlNode);
       } else {
-          /**
-           * TODO: удалить после синхронизации с контролами
-           */
-          try {
-              if (!controlNode.control._destroyed) {
+        // _reactiveStart means starting of monitor change in properties
+        controlNode.control._reactiveStart = true;
+        if (!controlNode.control._mounted && !controlNode.control._unmounted) {
+            if (controlNode.hasCompound) {
                 // @ts-ignore
-                const afterUpdateResult = controlNode.control._afterUpdate && controlNode.control._afterUpdate(controlNode.oldOptions || controlNode.options, controlNode.oldContext);
-              }
-          } catch (error) {
-              // Logger.catchLifeCircleErrors('_afterUpdate', error, controlNode.control._moduleName);
-          } finally {
-              // We need controlNode.oldOptions only in _afterUpdate method. Can delete them from node after using.
-              delete controlNode.oldOptions;
-          }
+                runDelayed.default(function () {
+                    afterMountProcess(controlNode);
+                });
+            } else {
+                afterMountProcess(controlNode);
+            }
+        } else {
+            /**
+             * TODO: удалить после синхронизации с контролами
+             */
+            try {
+                if (!controlNode.control._destroyed) {
+                  // @ts-ignore
+                  const afterUpdateResult = controlNode.control._afterUpdate && controlNode.control._afterUpdate(controlNode.oldOptions || controlNode.options, controlNode.oldContext);
+                }
+            } catch (error) {
+                // Logger.catchLifeCircleErrors('_afterUpdate', error, controlNode.control._moduleName);
+            } finally {
+                // We need controlNode.oldOptions only in _afterUpdate method. Can delete them from node after using.
+                delete controlNode.oldOptions;
+            }
+        }
       }
   }
 }
@@ -430,7 +457,7 @@ function rerenderWasaby() {
 
 function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRootStart, parentDOM, lifecycle, environment) {
   let setHookFunction;
-  let controlNodeRef; 
+  let controlNodeRef;
   let setEventFunction;
   let controlNodeEventRef;
  // @ts-ignore
@@ -535,14 +562,14 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
     vNode.instance = controlNode;
     vNode.instance.parentDOM = parentDOM;
     vNode.carrier = carrier;
-  } else {
+  } else if (!controlNode.compound) {
     controlNode.markup = getDecoratedMarkup(controlNode, isRootStart);
     if (controlNode.markup && controlNode.markup.type && controlNode.markup.type === 'invisible-node') {
       // @ts-ignore
       setHookFunction = Hooks.setControlNodeHook(controlNode);
       if (controlNode.markup.ref && parentVNode.ref) {
           const cnmRef = controlNode.markup.ref;
-          // @ts-ignore 
+          // @ts-ignore
           controlNode.markup.ref = function (domNode) {
               cnmRef(parentDOM);
               parentVNode.ref(parentDOM);
@@ -566,7 +593,7 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
       // @ts-ignore
       setHookFunction = Hooks.setControlNodeHook(controlNode);
       if (controlNode.markup.ref && vNode.ref) {
-          const cnmRef = controlNode.markup.ref; 
+          const cnmRef = controlNode.markup.ref;
           controlNode.markup.ref = function (domNode) {
               cnmRef(domNode);
               vNode.ref(domNode);
@@ -584,6 +611,9 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
       vNode.instance.parentDOM = parentDOM;
       vNode.instance.markup.ref = controlNodeEventRef[4];
     }
+  } else {
+    vNode.instance = controlNode;
+    vNode.instance.parentDOM = parentDOM;
   }
   return vNode;
 }
@@ -629,7 +659,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
         };
      }
      if (VirtualNode.compound || isInvisibleNode) {
-        mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, VirtualNode.instance.markup.dom, lifecycle, isRootStart, environment, VirtualNode.instance);
+        mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance);
      }
   }
 
