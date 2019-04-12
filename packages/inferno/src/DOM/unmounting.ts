@@ -6,11 +6,10 @@ import { EMPTY_OBJ, findDOMfromVNode, removeVNodeDOM } from './utils/common';
 import { unmountRef } from '../core/refs';
 
 function compoundUnmountProcess(controlNode) {
-  var
-      control = controlNode.control,
-      options = controlNode.options,
-      name = options.name,
-      logicParent = options.logicParent;
+  const control = controlNode.control;
+  const options = controlNode.options;
+  const name = options.name;
+  const logicParent = options.logicParent;
 
   if (logicParent && name) {
       if (logicParent._children && logicParent._children[name]) {

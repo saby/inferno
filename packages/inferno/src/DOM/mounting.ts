@@ -206,19 +206,17 @@ function afterMountProcess(controlNode) {
   }
 }
 function compoundMountProcess(controlNode) {
-  var
-      control,
-      options = controlNode.options,
-      element = controlNode.markup.dom,
-      name = options.name,
-      logicParent = options.logicParent;
+  const options = controlNode.options;
+  const element = controlNode.markup.dom;
+  const name = options.name;
+  const logicParent = options.logicParent;
 
   options.element = element;
   options.hasMarkup = true;
   options.parent = null;
   controlNode.control = new controlNode.controlClass(options);
 
-  control = controlNode.control;
+  const control = controlNode.control;
 
   if (logicParent && name) {
       if (logicParent._children) {
