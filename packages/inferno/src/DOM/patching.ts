@@ -13,7 +13,7 @@ import { mountRef, unmountRef } from '../core/refs';
 import { getDecoratedMarkup, collectObjectVersions } from '../wasaby/control'
 
 
-function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], environment?: any, parentControlNode?: any) {
+function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], environment?: any, parentControlNode?: any, parentVNode?: any) {
   unmount(lastVNode);
 
   if ((nextVNode.flags & lastVNode.flags & VNodeFlags.DOMRef) !== 0) {
@@ -28,7 +28,7 @@ function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: O
           replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
       }
   } else {
-    mount(nextVNode, parentDOM, context, isSVG, findDOMfromVNode(lastVNode, true), lifecycle, false, environment, parentControlNode);
+    mount(nextVNode, parentDOM, context, isSVG, findDOMfromVNode(lastVNode, true), lifecycle, false, environment, parentControlNode, parentVNode);
     removeVNodeDOM(lastVNode, parentDOM);
   }
 }
@@ -58,7 +58,7 @@ export function patch(
 
   if (lastVNode.flags !== nextFlags || lastVNode.type !== nextVNode.type || lastVNode.key !== nextVNode.key || (nextFlags & VNodeFlags.ReCreate) !== 0) {
     if (lastVNode.flags & VNodeFlags.InUse) {
-      replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode);
+      replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode, parentVNode);
     } else {
       let dom = lastVNode.dom as Element;
       if (!dom && parentDOM) {
