@@ -1,6 +1,6 @@
 import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning, unescape } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
-import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, nextTickWasaby} from 'inferno';
+import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, nextTickWasaby, _SWCNH} from 'inferno';
 
 function checkIfHydrationNeeded(sibling: Node | Element | null): boolean {
   // @ts-ignore
@@ -51,7 +51,7 @@ function isSamePropsInnerHTML(dom: Element, props): boolean {
 }
 
 function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
-  const yVNode = _CWCI(vNode, parentDOM, isSVG, {}, lifecycle, isRootStart, environment, parentControlNode, parentVNode, true);
+  let yVNode = _CWCI(vNode, parentDOM, isSVG, {}, lifecycle, isRootStart, environment, parentControlNode, parentVNode, true);
   const input = yVNode.instance.markup;
   let currentNode;
   if (input.type === 'invisible-node') {
@@ -64,6 +64,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
          yVNode.instance.control._forceUpdate = function (memo) {
               const lifecycle = [];
               if (memo === 'hydrate') {
+                  yVNode = _SWCNH(yVNode.instance, yVNode, parentVNode, false, parentDOM, lifecycle, environment);
                   hydrateVNode(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, yVNode.instance);
                   // @ts-ignore
                   lifecycle.push(_MWWC(yVNode.instance));
@@ -95,7 +96,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
       }
 
 
-      currentNode = hydrateVNode(input, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, yVNode.instance);
+      currentNode = hydrateVNode(input, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, yVNode.instance, vNode);
       lifecycle.push(_MWWC(yVNode.instance));
   }
   return currentNode;
