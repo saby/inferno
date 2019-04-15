@@ -63,6 +63,8 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
       if (yVNode.instance.control && yVNode.instance.control._forceUpdate) {
          yVNode.instance.control._forceUpdate = function (memo) {
               const lifecycle = [];
+              // @ts-ignore
+              lifecycle.mount = [];
               if (memo === 'hydrate') {
                   yVNode = _SWCNH(yVNode.instance, yVNode, parentVNode, false, parentDOM, lifecycle, environment);
                   hydrateVNode(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, yVNode.instance);
