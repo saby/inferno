@@ -10,7 +10,6 @@ import { mountRef } from '../core/refs';
 import { createNode, getDecoratedMarkup, nextTickWasaby, collectObjectVersions } from '../wasaby/control';
 // @ts-ignore
 import { createWriteStream } from 'fs';
-export const QUEUE = [];
 
 export function mount(vNode: VNode, parentDOM: Element | null, context: Object, isSVG: boolean, nextNode: Element | null, lifecycle: Function[], isRootStart?: boolean, environment?: any, parentControlNode?: any, parentVNode?: any): void {
   const flags = (vNode.flags |= VNodeFlags.InUse);
@@ -423,6 +422,7 @@ function checkUpdateCount(control) {
 }
 
 function applyWasabyState(component, pNode?) {
+  const queue = component.environment.queue;
   const lifecycle = [];
   // @ts-ignore
   lifecycle.mount = [];
@@ -430,8 +430,10 @@ function applyWasabyState(component, pNode?) {
   updateWasabyControl(component, pNode || controlContainer, lifecycle);
   checkUpdateCount(component.control);
   // @ts-ignore
-  if (QUEUE.indexOf(component) === -1 && QUEUE.push(component) === 1) {
-    nextTickWasaby(rerenderWasaby);
+  if (queue.indexOf(component) === -1 && queue.push(component) === 1) {
+    nextTickWasaby(() => {
+      rerenderWasaby(queue);
+    });
   }
   if (lifecycle.length > 0) {
     callAll(lifecycle);
@@ -441,23 +443,29 @@ function applyWasabyState(component, pNode?) {
     callAll(lifecycle);
   }
   // @ts-ignore
-  const ind = QUEUE.indexOf(component);
-  QUEUE.splice(ind, 1);
+  const ind = queue.indexOf(component);
+  queue.splice(ind, 1);
 }
 // @ts-ignore
 export function queueWasabyControlChanges(controlNode, pNode?) {
-  if (QUEUE.length === 0) {
+  if (!controlNode.environment.queue) {
+    controlNode.environment.queue = [];
+  }
+  const queue = controlNode.environment.queue;
+  if (queue.length === 0) {
       applyWasabyState(controlNode, pNode);
       return;
   }
   // @ts-ignore
-  if (QUEUE.indexOf(controlNode) === -1 && QUEUE.push(controlNode) === 1) {
-    nextTickWasaby(rerenderWasaby);
+  if (queue.indexOf(controlNode) === -1 && queue.push(controlNode) === 1) {
+    nextTickWasaby(() => {
+      rerenderWasaby(queue);
+    });
   }
 }
-function rerenderWasaby() {
+function rerenderWasaby(queue) {
   let component;
-  while ((component = QUEUE.pop())) {
+  while ((component = queue.pop())) {
     applyWasabyState(component);
   }
 }
