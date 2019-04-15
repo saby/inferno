@@ -67,13 +67,21 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                   yVNode = _SWCNH(yVNode.instance, yVNode, parentVNode, false, parentDOM, lifecycle, environment);
                   hydrateVNode(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, yVNode.instance);
                   // @ts-ignore
-                  lifecycle.push(_MWWC(yVNode.instance));
+                  lifecycle.mount.push(_MWWC(yVNode.instance));
                   if (lifecycle.length > 0) {
                       let listener;
                       while ((listener = lifecycle.shift()) !== undefined) {
                         listener();
                       }
                   }
+                  // @ts-ignore
+                  if (lifecycle.mount.length > 0) {
+                    let listener;
+                    // @ts-ignore
+                    while ((listener = lifecycle.mount.shift()) !== undefined) {
+                      listener();
+                    }
+                }
               } else {
                   _queueWasabyControlChanges(vNode.instance, parentDOM);
               }
@@ -97,7 +105,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
 
 
       currentNode = hydrateVNode(input, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, yVNode.instance, vNode);
-      lifecycle.push(_MWWC(yVNode.instance));
+      lifecycle.mount.push(_MWWC(yVNode.instance));
   }
   return currentNode;
 }
@@ -408,6 +416,8 @@ export function hydrate(input, parentDOM: Element, callback?: Function, isRootSt
     render(input, parentDOM, callback, {}, isRootStart, environment, parentControlNode);
   } else {
     const lifecycle: Function[] = [];
+    // @ts-ignore
+    lifecycle.mount = [];
 
     if (!isInvalid(input)) {
       dom = hydrateVNode(input, parentDOM, dom, {}, false, lifecycle, isRootStart, environment, parentControlNode) as Element;
@@ -424,6 +434,14 @@ export function hydrate(input, parentDOM: Element, callback?: Function, isRootSt
     if (lifecycle.length > 0) {
       let listener;
       while ((listener = lifecycle.shift()) !== undefined) {
+        listener();
+      }
+    }
+    // @ts-ignore
+    if (lifecycle.mount.length > 0) {
+      let listener;
+      // @ts-ignore
+      while ((listener = lifecycle.mount.shift()) !== undefined) {
         listener();
       }
     }

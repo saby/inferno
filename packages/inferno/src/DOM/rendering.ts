@@ -48,6 +48,8 @@ export function __render(
     }
   }
   const lifecycle: Function[] = [];
+  // @ts-ignore
+  lifecycle.mount = [];
   let rootInput = (parentDOM as any).$V as VNode | null;
 
   if (isNullOrUndef(rootInput)) {
@@ -74,6 +76,11 @@ export function __render(
 
   if (lifecycle.length > 0) {
     callAll(lifecycle);
+  }
+  // @ts-ignore
+  if (lifecycle.mount.length > 0) {
+    // @ts-ignore
+    callAll(lifecycle.mount);
   }
   if (isFunction(callback)) {
     (callback as Function)();
