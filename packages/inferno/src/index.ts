@@ -26,7 +26,8 @@ import {
   createWasabyControlInstance,
   mountWasabyCallback,
   createWasabyTemplateNode,
-  queueWasabyControlChanges
+  queueWasabyControlChanges,
+  setWasabyControlNodeHooks
 } from './DOM/mounting';
 import { createRef, forwardRef, mountRef } from './core/refs';
 import { nextTickWasaby } from './wasaby/control';
@@ -89,5 +90,6 @@ export {
   createWasabyTemplateNode as _CWTN,
   queueWasabyControlChanges as _queueWasabyControlChanges,
   callAll as _callAll,
-  nextTickWasaby
+  nextTickWasaby,
+  setWasabyControlNodeHooks as _SWCNH
 };

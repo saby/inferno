@@ -393,7 +393,7 @@ function rerenderWasaby() {
   }
 }
 
-function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRootStart, parentDOM, lifecycle, environment) {
+export function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRootStart, parentDOM, lifecycle, environment) {
   let setHookFunction;
   let controlNodeRef; 
   let setEventFunction;
@@ -497,6 +497,7 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
     vNode.instance = controlNode;
     vNode.instance.parentDOM = parentDOM;
     vNode.carrier = carrier;
+    mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
   } else {
     controlNode.markup = getDecoratedMarkup(controlNode, isRootStart);
     if (controlNode.markup && controlNode.markup.type && controlNode.markup.type === 'invisible-node') {
@@ -608,11 +609,11 @@ export function getMarkupForTemplatedNode(vNode) {
 
 // @ts-ignore
 export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode) {
+  vNode.markup = getMarkupForTemplatedNode(vNode);
   // check current context field versions
   vNode.optionsVersions = collectObjectVersions(vNode.controlProperties);
   // check current context field versions
   vNode.contextVersions = collectObjectVersions(vNode.context);
-  vNode.markup = getMarkupForTemplatedNode(vNode);
   vNode.markup.forEach(function (node) {
       if (node.hprops) {
           // @ts-ignore
