@@ -438,7 +438,8 @@ function applyWasabyState(component, pNode?) {
   }
   // @ts-ignore
   if (lifecycle.mount.length > 0) {
-    callAll(lifecycle);
+    // @ts-ignore
+    callAll(lifecycle.mount);
   }
   // @ts-ignore
   const ind = QUEUE.indexOf(component);
