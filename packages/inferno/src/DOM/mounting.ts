@@ -422,7 +422,7 @@ function checkUpdateCount(control) {
 }
 
 function applyWasabyState(component, pNode?) {
-  const queue = component.environment.queue;
+  const queue = component.environment.infernoQueue;
   const lifecycle = [];
   // @ts-ignore
   lifecycle.mount = [];
@@ -435,13 +435,17 @@ function applyWasabyState(component, pNode?) {
       rerenderWasaby(queue);
     });
   }
-  if (lifecycle.length > 0) {
-    callAll(lifecycle);
-  }
-  // @ts-ignore
-  if (lifecycle.mount.length > 0) {
+
+  // Call all lifecycle if all async controls in current environment are updated.
+  if (Object.keys(component.environment.asyncRenderIds).length === 0) {
+    if (lifecycle.length > 0) {
+      callAll(lifecycle);
+    }
     // @ts-ignore
-    callAll(lifecycle.mount);
+    if (lifecycle.mount.length > 0) {
+      // @ts-ignore
+      callAll(lifecycle.mount);
+    }
   }
   // @ts-ignore
   const ind = queue.indexOf(component);
@@ -449,14 +453,7 @@ function applyWasabyState(component, pNode?) {
 }
 // @ts-ignore
 export function queueWasabyControlChanges(controlNode, pNode?) {
-  if (!controlNode.environment.queue) {
-    controlNode.environment.queue = [];
-  }
-  const queue = controlNode.environment.queue;
-  if (queue.length === 0) {
-      applyWasabyState(controlNode, pNode);
-      return;
-  }
+  const queue = controlNode.environment.infernoQueue;
   // @ts-ignore
   if (queue.indexOf(controlNode) === -1 && queue.push(controlNode) === 1) {
     nextTickWasaby(() => {
@@ -467,7 +464,7 @@ export function queueWasabyControlChanges(controlNode, pNode?) {
 function rerenderWasaby(queue) {
   let component;
   while ((component = queue.pop())) {
-    applyWasabyState(component);
+    applyWasabyState(component, component.parentDOM);
   }
 }
 
@@ -636,6 +633,12 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
 }
 
 export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG: boolean, nextNode: Element | null, lifecycle, isRootStart?: boolean, environment?: any, parentVNode?: any) {
+  if (!environment.infernoQueue) {
+    environment.infernoQueue = [];
+  }
+  if (!environment.asyncRenderIds) {
+    environment.asyncRenderIds = {};
+  }
   let VirtualNode = createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, undefined, parentVNode);
   if (VirtualNode.carrier && VirtualNode.carrier.then) {
      if (VirtualNode.instance.control && VirtualNode.instance.control._forceUpdate) {
@@ -643,6 +646,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
             // var lifecycle = [];
            // @ts-ignore
            if (memo === 'mount') {
+              delete environment.asyncRenderIds[VirtualNode.instance.id];
               if (VirtualNode.compound || (VirtualNode.instance.markup && VirtualNode.instance.markup.type !== 'invisible-node')) {
                  VirtualNode = setWasabyControlNodeHooks(VirtualNode.instance, VirtualNode, parentVNode, isRootStart, parentDOM, lifecycle, environment);
                  mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance);
@@ -660,9 +664,8 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                 }
              }
            } else {
-             nextTickWasaby(function () {
+               environment.asyncRenderIds[VirtualNode.instance.id] = true;
                queueWasabyControlChanges(VirtualNode.instance, VirtualNode.instance.parentDOM);
-             });
            }
         };
         VirtualNode.carrier.then(function (data) {

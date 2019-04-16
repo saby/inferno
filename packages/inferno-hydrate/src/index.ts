@@ -1,6 +1,6 @@
 import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning, unescape } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
-import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, nextTickWasaby, _SWCNH} from 'inferno';
+import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, _SWCNH} from 'inferno';
 
 function checkIfHydrationNeeded(sibling: Node | Element | null): boolean {
   // @ts-ignore
@@ -51,6 +51,12 @@ function isSamePropsInnerHTML(dom: Element, props): boolean {
 }
 
 function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
+  if (!environment.infernoQueue) {
+    environment.infernoQueue = [];
+  }
+  if (!environment.asyncRenderIds) {
+    environment.asyncRenderIds = {};
+  }
   let yVNode = _CWCI(vNode, parentDOM, isSVG, {}, lifecycle, isRootStart, environment, parentControlNode, parentVNode, true);
   const input = yVNode.instance.markup;
   let currentNode;
@@ -66,6 +72,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
               // @ts-ignore
               lifecycle.mount = [];
               if (memo === 'hydrate') {
+                  delete environment.asyncRenderIds[yVNode.instance.id];
                   yVNode = _SWCNH(yVNode.instance, yVNode, parentVNode, false, parentDOM, lifecycle, environment);
                   hydrateVNode(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, yVNode.instance);
                   // @ts-ignore
@@ -85,6 +92,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                     }
                 }
               } else {
+                  environment.asyncRenderIds[yVNode.instance.id] = true;
                   _queueWasabyControlChanges(vNode.instance, parentDOM);
               }
            };
@@ -99,9 +107,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
   } else {
       if (yVNode.instance.control && yVNode.instance.control._forceUpdate) {
          yVNode.instance.control._forceUpdate = function () {
-              nextTickWasaby(function () {
-                 _queueWasabyControlChanges(yVNode.instance, yVNode.instance.parentDOM);
-              });
+               _queueWasabyControlChanges(yVNode.instance, yVNode.instance.parentDOM);
           };
       }
 

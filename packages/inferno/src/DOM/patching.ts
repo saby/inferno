@@ -785,7 +785,7 @@ function patchKeyedChildren(
           b[j] = bNode = directClone(bNode);
         }
         ++j;
-        mount(bNode, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode);
+        mount(bNode, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNodeW);
       }
     }
   } else if (j > bEnd) {
