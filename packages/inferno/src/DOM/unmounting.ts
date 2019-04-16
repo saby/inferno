@@ -62,7 +62,6 @@ export function unmount(vNode) {
     }
   } else if (flags & VNodeFlags.WasabyControl) {
     if (!vNode.compound) {
-      vNode.instance.control._beforeUnmount();
       unmount(vNode.instance.markup);
       vNode.instance.control._mounted = false;
       vNode.instance.control._unmounted = true;

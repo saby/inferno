@@ -384,7 +384,7 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
       patch(controlNode.markup, nextInput, parentDOM, {}, false, controlElement, lifecycle, controlNode.environment, controlNode);
       controlNode.markup = nextInput;
       controlNode.fullMarkup = controlNode.markup;
-      lifecycle.push(mountWasabyCallback(controlNode));
+      lifecycle.mount.push(mountWasabyCallback(controlNode));
   }
 }
 
@@ -676,7 +676,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
         };
      }
      if (VirtualNode.compound || isInvisibleNode) {
-        mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, VirtualNode.instance.markup.dom, lifecycle, isRootStart, environment, VirtualNode.instance);
+        mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, VirtualNode.instance.markup.dom, lifecycle, isRootStart, environment, VirtualNode.instance, vNode);
      }
   }
 
