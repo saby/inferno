@@ -383,7 +383,7 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
       patch(controlNode.markup, nextInput, parentDOM, {}, false, controlElement, lifecycle, controlNode.environment, controlNode);
       controlNode.markup = nextInput;
       controlNode.fullMarkup = controlNode.markup;
-      lifecycle.push(mountWasabyCallback(controlNode));
+      lifecycle.mount.push(mountWasabyCallback(controlNode));
   }
 }
 
@@ -440,7 +440,8 @@ function applyWasabyState(component, pNode?) {
   }
   // @ts-ignore
   if (lifecycle.mount.length > 0) {
-    callAll(lifecycle);
+    // @ts-ignore
+    callAll(lifecycle.mount);
   }
   // @ts-ignore
   const ind = queue.indexOf(component);
@@ -684,7 +685,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
         };
      }
      if (VirtualNode.compound || isInvisibleNode) {
-        mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, VirtualNode.instance.markup.dom, lifecycle, isRootStart, environment, VirtualNode.instance);
+        mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, VirtualNode.instance.markup.dom, lifecycle, isRootStart, environment, VirtualNode.instance, vNode);
      }
   }
 
