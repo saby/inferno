@@ -422,19 +422,12 @@ function checkUpdateCount(control) {
 }
 
 function applyWasabyState(component, pNode?) {
-  const queue = component.environment.infernoQueue;
   const lifecycle = [];
   // @ts-ignore
   lifecycle.mount = [];
   const controlContainer = (component.control._container && (component.control._container[0] || component.control._container));
   updateWasabyControl(component, pNode || controlContainer, lifecycle);
   checkUpdateCount(component.control);
-  // @ts-ignore
-  if (queue.indexOf(component) === -1 && queue.push(component) === 1) {
-    nextTickWasaby(() => {
-      rerenderWasaby(queue);
-    });
-  }
 
   // Call all lifecycle if all async controls in current environment are updated.
   if (Object.keys(component.environment.asyncRenderIds).length === 0) {
@@ -447,9 +440,6 @@ function applyWasabyState(component, pNode?) {
       callAll(lifecycle.mount);
     }
   }
-  // @ts-ignore
-  const ind = queue.indexOf(component);
-  queue.splice(ind, 1);
 }
 // @ts-ignore
 export function queueWasabyControlChanges(controlNode, pNode?) {
