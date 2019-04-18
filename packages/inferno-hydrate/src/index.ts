@@ -67,6 +67,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
   }
   if (yVNode.carrier && yVNode.carrier.then) {
       if (yVNode.instance.control && yVNode.instance.control._forceUpdate) {
+         environment.asyncRenderIds[yVNode.instance.id] = true;
          yVNode.instance.control._forceUpdate = function (memo) {
               const lifecycle = [];
               // @ts-ignore
@@ -92,7 +93,6 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                     }
                 }
               } else {
-                  environment.asyncRenderIds[yVNode.instance.id] = true;
                   _queueWasabyControlChanges(vNode.instance, parentDOM);
               }
            };

@@ -78,8 +78,11 @@ export function patch(
         nextVNode.dom = dom;
      }
 
-      // Last vNode is not in use, it has crashed at application level. Just mount nextVNode and ignore last one
-      mount(nextVNode, parentDOM, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNode);
+      // Async nodes will be mounted if from another point. TODO: bad code, have to rewrite.
+      if (!environment.asyncRenderIds[parentControlNode.id]) {
+        // Last vNode is not in use, it has crashed at application level. Just mount nextVNode and ignore last one
+        mount(nextVNode, parentDOM, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNode);
+      }
     }
   } else if (nextFlags & VNodeFlags.Element) {
     patchElement(lastVNode, nextVNode, context, isSVG, nextFlags, lifecycle, environment, parentControlNode);

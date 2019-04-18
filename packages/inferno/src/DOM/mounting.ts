@@ -632,6 +632,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
   let VirtualNode = createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, undefined, parentVNode);
   if (VirtualNode.carrier && VirtualNode.carrier.then) {
      if (VirtualNode.instance.control && VirtualNode.instance.control._forceUpdate) {
+        environment.asyncRenderIds[VirtualNode.instance.id] = true;
         VirtualNode.instance.control._forceUpdate = function (memo) {
             // var lifecycle = [];
            // @ts-ignore
@@ -654,7 +655,6 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                 }
              }
            } else {
-               environment.asyncRenderIds[VirtualNode.instance.id] = true;
                queueWasabyControlChanges(VirtualNode.instance, VirtualNode.instance.parentDOM);
            }
         };
@@ -670,11 +670,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
      const isInvisibleNode = VirtualNode.instance.markup && VirtualNode.instance.markup.type !== 'invisible-node';
      if (VirtualNode.instance.control && VirtualNode.instance.control._forceUpdate) {
         VirtualNode.instance.control._forceUpdate = function () {
-           nextTickWasaby(function () {
-            // @ts-ignore
             queueWasabyControlChanges(VirtualNode.instance, parentDOM);
-           })
-           
         };
      }
      if (VirtualNode.compound || isInvisibleNode) {
