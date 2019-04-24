@@ -567,6 +567,8 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
     vNode.carrier = carrier;
     mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
   } else if (!controlNode.compound) {
+    // @ts-ignore
+    controlNode.control.saveFullContext(ContextResolver.wrapContext(controlNode.control, controlNode.context || {}));
     controlNode.markup = getDecoratedMarkup(controlNode, isRootStart);
     if (controlNode.markup && controlNode.markup.type && controlNode.markup.type === 'invisible-node') {
       // @ts-ignore
