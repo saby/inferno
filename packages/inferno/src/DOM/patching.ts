@@ -397,7 +397,7 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
             node.ref = templateNodeEventRef[4];
         }
       });
-      patchChildren(lastVNode.markup.flags, nextInput.flags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, nextVNode, lastVNode, lifecycle, environment, parentControlNode);
+      patchChildren(lastVNode.markup.flags, nextInput.flags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, null, lastVNode, lifecycle, environment, parentControlNode);
       nextVNode.markup = nextInput;
    } else {
       nextVNode.markup = lastVNode.markup;
