@@ -32,7 +32,7 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
   } else if (flags & VNodeFlags.WasabyControl || flags === 147456) {
     mountWasabyControl(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentVNode);
   } else if (flags & VNodeFlags.TemplateWasabyNode) {
-    mountWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode);
+    mountWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
   } else if (process.env.NODE_ENV !== 'production') {
     // Development validation, in production we don't need to throw because it crashes anyway
     if (typeof vNode === 'object') {
@@ -375,7 +375,7 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
   }
   if (shouldUp) {
       // @ts-ignore
-      const nextInput = getDecoratedMarkup(controlNode, false);
+      const nextInput = getDecoratedMarkup(controlNode, false) || controlNode.element;
       const controlElement = (nextInput.instance && nextInput.instance.markup.dom);
       // nextVNode.instance = controlNode;
       nextInput.ref = controlNode.markup.ref;
@@ -713,7 +713,7 @@ export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, life
 }
 
 // @ts-ignore
-function mountWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode) {
+function mountWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
   const yVNode = createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode);
   mountArrayChildren(yVNode.markup, parentDOM, {}, isSVG, nextNode, lifecycle, environment, parentControlNode);
 }

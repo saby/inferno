@@ -392,6 +392,8 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
       nextInput = getMarkupForTemplatedNode(nextVNode);
       patchChildren(lastVNode.markup.flags, nextInput.flags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, nextVNode, lastVNode, lifecycle, environment, parentControlNode);
       nextVNode.markup = nextInput;
+   } else {
+      nextVNode.markup = lastVNode.markup;
    }
 }
 
