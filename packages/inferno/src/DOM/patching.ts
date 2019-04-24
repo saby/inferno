@@ -386,10 +386,17 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
   const changedAttrs = DC.getChangedOptions(newAttrs, oldAttrs, false, {});
   const changedTemplate = lastVNode.template !== nextVNode.template;
   let nextInput;
-
    if (changedOptions || changedAttrs || changedTemplate) {
    //    Logger.log('DirtyChecking (update template with changed options)', ['', '', changedOptions]);
       nextInput = getMarkupForTemplatedNode(nextVNode);
+      nextInput.forEach(function (node) {
+        if (node.hprops) {
+            // @ts-ignore
+            const setEventFunction = Hooks.setEventHooks(environment);
+            const templateNodeEventRef = setEventFunction(node.type, node.hprops, node.children, node.key, parentControlNode, node.ref);
+            node.ref = templateNodeEventRef[4];
+        }
+      });
       patchChildren(lastVNode.markup.flags, nextInput.flags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, nextVNode, lastVNode, lifecycle, environment, parentControlNode);
       nextVNode.markup = nextInput;
    } else {
@@ -591,6 +598,16 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
       const nextInput = getDecoratedMarkup(childControlNode, false);
       nextVNode.instance = childControlNode;
       nextInput.ref = nextVNode.instance.markup.ref;
+
+      // @ts-ignore
+      const setEventFunction = Hooks.setEventHooks(environment);
+      const controlNodeEventRef = setEventFunction(childControlNode.markup.type, {
+        attributes: nextVNode.controlAttributes,
+        events: (childControlNode.markup.hprops && childControlNode.markup.hprops.events) || nextVNode.controlEvents
+      }, childControlNode.markup.children, childControlNode.key, childControlNode, childControlNode.markup.ref);
+
+      nextVNode.instance.markup.ref = controlNodeEventRef[4];
+
       patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextInput.dom, lifecycle, environment, nextVNode.instance, nextInput);
       nextVNode.instance.markup = nextInput;
       lifecycle.mount.push(mountWasabyCallback(childControlNode));

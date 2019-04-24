@@ -72,6 +72,8 @@ export function findDOMfromVNode(vNode: VNode, start: boolean) {
         // @ts-ignore
         return vNode.instance.markup.dom;
       }
+    } else if (flags & VNodeFlags.TemplateWasabyNode) {
+      return vNode.markup[0].dom;
     } else {
       vNode = children;
     }
@@ -94,6 +96,10 @@ export function removeVNodeDOM(vNode: VNode, parentDOM: Element) {
       if (realDom && realDom.parentElement && parentDOM.contains(realDom)) {
         removeChild(parentDOM, realDom);
       }
+    }
+  } else if (flags & VNodeFlags.TemplateWasabyNode) {
+    for (let i = 0, len = vNode.markup.length; i < len; ++i) {
+      removeVNodeDOM(vNode.markup[i], parentDOM);
     }
   } else {
     const children = vNode.children as any;
