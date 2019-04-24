@@ -375,8 +375,8 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
   }
   if (shouldUp) {
       // @ts-ignore
-      const nextInput = getDecoratedMarkup(controlNode, false) || controlNode.element;
-      const controlElement = (nextInput.instance && nextInput.instance.markup.dom);
+      const nextInput = getDecoratedMarkup(controlNode, false);
+      const controlElement = (nextInput.instance && nextInput.instance.markup.dom) || controlNode.element;
       // nextVNode.instance = controlNode;
       nextInput.ref = controlNode.markup.ref;
       // @ts-ignore
