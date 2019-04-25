@@ -644,18 +644,20 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                  VirtualNode = setWasabyControlNodeHooks(VirtualNode.instance, VirtualNode, parentVNode, isRootStart, parentDOM, lifecycle, environment);
                  mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance);
               }
-              if (lifecycle.length > 0) {
-                 let listener;
-                 while ((listener = lifecycle.shift()) !== undefined) {
-                    listener();
-                 }
-              }
-              if (lifecycle.mount.length > 0) {
-                let listener;
-                while ((listener = lifecycle.mount.shift()) !== undefined) {
-                   listener();
+              if (Object.keys(environment.asyncRenderIds).length === 0) {
+                if (lifecycle.length > 0) {
+                    let listener;
+                    while ((listener = lifecycle.shift()) !== undefined) {
+                      listener();
+                    }
                 }
-             }
+                if (lifecycle.mount.length > 0) {
+                  let listener;
+                  while ((listener = lifecycle.mount.shift()) !== undefined) {
+                      listener();
+                  }
+                }
+              }
            } else {
                queueWasabyControlChanges(VirtualNode.instance, VirtualNode.instance.parentDOM);
            }
