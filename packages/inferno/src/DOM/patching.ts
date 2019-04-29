@@ -594,6 +594,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
               childControlNode.internalOptions = nextVNode.controlInternalProperties;
           }
       }
+      childControlNode.control.saveFullContext(ContextResolver.wrapContext(childControlNode.control, childControlNode.context || {}));
       // @ts-ignore
       const nextInput = getDecoratedMarkup(childControlNode, false);
       nextVNode.instance = childControlNode;
