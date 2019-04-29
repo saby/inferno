@@ -57,6 +57,9 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
   if (!environment.asyncRenderIds) {
     environment.asyncRenderIds = {};
   }
+  if (!environment.asyncAwaitRenderQueue) {
+    environment.asyncAwaitRenderQueue = [];
+  }
   let yVNode = _CWCI(vNode, parentDOM, isSVG, {}, lifecycle, isRootStart, environment, parentControlNode, parentVNode, true);
   const input = yVNode.instance.markup;
   let currentNode;
@@ -69,29 +72,31 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
       if (yVNode.instance.control && yVNode.instance.control._forceUpdate) {
          environment.asyncRenderIds[yVNode.instance.id] = true;
          yVNode.instance.control._forceUpdate = function (memo) {
-              const lifecycle = [];
+//               const lifecycle = [];
               // @ts-ignore
-              lifecycle.mount = [];
+//               lifecycle.mount = [];
               if (memo === 'hydrate') {
                   delete environment.asyncRenderIds[yVNode.instance.id];
                   yVNode = _SWCNH(yVNode.instance, yVNode, parentVNode, false, parentDOM, lifecycle, environment);
-                  hydrateVNode(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, yVNode.instance);
+                  hydrateVNode(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, vNode);
                   // @ts-ignore
                   lifecycle.mount.push(_MWWC(yVNode.instance));
-                  if (lifecycle.length > 0) {
-                      let listener;
-                      while ((listener = lifecycle.shift()) !== undefined) {
-                        listener();
+                  if (Object.keys(environment.asyncRenderIds).length === 0) {
+                      if (lifecycle.length > 0) {
+                          let listener;
+                          while ((listener = lifecycle.shift()) !== undefined) {
+                            listener();
+                          }
                       }
+                      // @ts-ignore
+                      if (lifecycle.mount.length > 0) {
+                        let listener;
+                        // @ts-ignore
+                        while ((listener = lifecycle.mount.shift()) !== undefined) {
+                          listener();
+                        }
+                     }
                   }
-                  // @ts-ignore
-                  if (lifecycle.mount.length > 0) {
-                    let listener;
-                    // @ts-ignore
-                    while ((listener = lifecycle.mount.shift()) !== undefined) {
-                      listener();
-                    }
-                }
               } else {
                   _queueWasabyControlChanges(vNode.instance, parentDOM);
               }
@@ -107,7 +112,17 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
   } else {
       if (yVNode.instance.control && yVNode.instance.control._forceUpdate) {
          yVNode.instance.control._forceUpdate = function () {
-               _queueWasabyControlChanges(yVNode.instance, yVNode.instance.parentDOM);
+               let asyncAwaitRenderItem;
+               if (Object.keys(yVNode.instance.environment.asyncRenderIds).length === 0) {
+                  _queueWasabyControlChanges(yVNode.instance, yVNode.instance.parentDOM, parentControlNode);
+                   if (yVNode.instance.environment.asyncAwaitRenderQueue.length === 0) {
+                      while ((asyncAwaitRenderItem = yVNode.instance.environment.asyncAwaitRenderQueue.pop())) {
+                        inferno._queueWasabyControlChanges(asyncAwaitRenderItem, asyncAwaitRenderItem.parentDOM);
+                      }
+                   }
+               } else {
+                  yVNode.instance.environment.asyncAwaitRenderQueue.push(yVNode.instance);
+               }
           };
       }
 
