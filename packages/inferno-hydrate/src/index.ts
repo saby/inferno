@@ -98,7 +98,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                      }
                   }
               } else {
-                  _queueWasabyControlChanges(vNode.instance, parentDOM);
+                  _queueWasabyControlChanges(vNode.instance);
               }
            };
        }
@@ -114,10 +114,10 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
          yVNode.instance.control._forceUpdate = function () {
                let asyncAwaitRenderItem;
                if (Object.keys(yVNode.instance.environment.asyncRenderIds).length === 0) {
-                  _queueWasabyControlChanges(yVNode.instance, parentControlNode);
+                  _queueWasabyControlChanges(yVNode.instance);
                    if (yVNode.instance.environment.asyncAwaitRenderQueue.length === 0) {
                       while ((asyncAwaitRenderItem = yVNode.instance.environment.asyncAwaitRenderQueue.pop())) {
-                        _queueWasabyControlChanges(asyncAwaitRenderItem, asyncAwaitRenderItem.parentDOM);
+                        _queueWasabyControlChanges(asyncAwaitRenderItem);
                       }
                    }
                } else {
