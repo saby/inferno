@@ -678,7 +678,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
         };
      }
      if (VirtualNode.compound || isInvisibleNode) {
-        mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, VirtualNode.instance.markup.dom, lifecycle, isRootStart, environment, VirtualNode.instance, vNode);
+        mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, vNode);
      }
   }
 
