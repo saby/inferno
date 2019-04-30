@@ -447,14 +447,14 @@ export function queueWasabyControlChanges(controlNode, pNode?) {
   // @ts-ignore
   if (queue.indexOf(controlNode) === -1 && queue.push(controlNode) === 1) {
     nextTickWasaby(() => {
-      rerenderWasaby(queue);
+      rerenderWasaby(queue, pNode);
     });
   }
 }
-function rerenderWasaby(queue) {
+function rerenderWasaby(queue, pNode?) {
   let component;
   while ((component = queue.pop())) {
-    applyWasabyState(component, component.parentDOM);
+    applyWasabyState(component, pNode);
   }
 }
 

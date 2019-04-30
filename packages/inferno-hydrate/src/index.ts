@@ -114,10 +114,10 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
          yVNode.instance.control._forceUpdate = function () {
                let asyncAwaitRenderItem;
                if (Object.keys(yVNode.instance.environment.asyncRenderIds).length === 0) {
-                  _queueWasabyControlChanges(yVNode.instance, yVNode.instance.parentDOM, parentControlNode);
+                  _queueWasabyControlChanges(yVNode.instance, yVNode.instance.parentDOM);
                    if (yVNode.instance.environment.asyncAwaitRenderQueue.length === 0) {
                       while ((asyncAwaitRenderItem = yVNode.instance.environment.asyncAwaitRenderQueue.pop())) {
-                        inferno._queueWasabyControlChanges(asyncAwaitRenderItem, asyncAwaitRenderItem.parentDOM);
+                        _queueWasabyControlChanges(asyncAwaitRenderItem, asyncAwaitRenderItem.parentDOM);
                       }
                    }
                } else {
@@ -401,7 +401,7 @@ function hydrateVNode(vNode: VNode, parentDOM: Element, currentDom: Element, con
   }
   // @ts-ignore
   if (vNode instanceof RawMarkupNode) {
-    return hydrateHTML(vNode, currentDom);  
+    return hydrateHTML(vNode, currentDom);
   }
   if (flags & VNodeFlags.Element) {
     return hydrateElement(vNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode);
