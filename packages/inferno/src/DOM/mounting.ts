@@ -442,7 +442,7 @@ function applyWasabyState(component, pNode?) {
   }
 }
 // @ts-ignore
-export function queueWasabyControlChanges(controlNode, pNode?) {
+export function queueWasabyControlChanges(controlNode) {
   const queue = controlNode.environment.infernoQueue;
   // @ts-ignore
   if (queue.indexOf(controlNode) === -1 && queue.push(controlNode) === 1) {
@@ -659,7 +659,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                 }
               }
            } else {
-               queueWasabyControlChanges(VirtualNode.instance, VirtualNode.instance.parentDOM);
+               queueWasabyControlChanges(VirtualNode.instance);
            }
         };
         VirtualNode.carrier.then(function (data) {
@@ -674,11 +674,11 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
      const isInvisibleNode = VirtualNode.instance.markup && VirtualNode.instance.markup.type !== 'invisible-node';
      if (VirtualNode.instance.control && VirtualNode.instance.control._forceUpdate) {
         VirtualNode.instance.control._forceUpdate = function () {
-            queueWasabyControlChanges(VirtualNode.instance, parentDOM);
+            queueWasabyControlChanges(VirtualNode.instance);
         };
      }
      if (VirtualNode.compound || isInvisibleNode) {
-        mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, VirtualNode.instance.markup.dom, lifecycle, isRootStart, environment, VirtualNode.instance, vNode);
+        mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, vNode);
      }
   }
 
