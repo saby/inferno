@@ -642,7 +642,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
               delete environment.asyncRenderIds[VirtualNode.instance.id];
               if (VirtualNode.compound || (VirtualNode.instance.markup && VirtualNode.instance.markup.type !== 'invisible-node')) {
                  VirtualNode = setWasabyControlNodeHooks(VirtualNode.instance, VirtualNode, parentVNode, isRootStart, parentDOM, lifecycle, environment);
-                 mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance);
+                 mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, VirtualNode);
               }
               if (Object.keys(environment.asyncRenderIds).length === 0) {
                 if (lifecycle.length > 0) {
