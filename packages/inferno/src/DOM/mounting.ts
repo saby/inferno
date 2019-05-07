@@ -7,7 +7,7 @@ import { mountProps } from './props';
 import { createClassComponentInstance, handleComponentInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
 import { mountRef } from '../core/refs';
-import { createNode, getDecoratedMarkup, nextTickWasaby, collectObjectVersions } from '../wasaby/control';
+import { createNode, getDecoratedMarkup, collectObjectVersions } from '../wasaby/control';
 // @ts-ignore
 import { createWriteStream } from 'fs';
 
@@ -375,6 +375,8 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
   }
   if (shouldUp) {
       // @ts-ignore
+      controlNode.control.saveFullContext(ContextResolver.wrapContext(controlNode.control, controlNode.context || {}));
+      // @ts-ignore
       const nextInput = getDecoratedMarkup(controlNode, false);
       const controlElement = (nextInput.instance && nextInput.instance.markup.dom) || controlNode.element;
       // nextVNode.instance = controlNode;
@@ -446,7 +448,8 @@ export function queueWasabyControlChanges(controlNode) {
   const queue = controlNode.environment.infernoQueue;
   // @ts-ignore
   if (queue.indexOf(controlNode) === -1 && queue.push(controlNode) === 1) {
-    nextTickWasaby(() => {
+    // @ts-ignore
+    runDelayed.default(() => {
       rerenderWasaby(queue);
     });
   }
