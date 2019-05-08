@@ -32,8 +32,7 @@ export function createVNode<P>(
   props?: Props<P> & P | null,
   key?: string | number | null,
   ref?: Ref | Refs<P> | null,
-  markup?: any,
-  controlClass?: any,
+  markup?: any
 ): VNode {
   if (process.env.NODE_ENV !== 'production') {
     if (flags & VNodeFlags.Component) {
