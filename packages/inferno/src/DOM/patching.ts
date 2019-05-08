@@ -56,7 +56,7 @@ export function patch(
     }
   }
 
-  if (lastVNode.flags !== nextFlags || lastVNode.type !== nextVNode.type || lastVNode.key !== nextVNode.key || (nextFlags & VNodeFlags.ReCreate) !== 0) {
+  if (lastVNode.flags !== nextFlags || lastVNode.type !== nextVNode.type || lastVNode.key !== nextVNode.key || (nextFlags & VNodeFlags.ReCreate) !== 0 || lastVNode.controlClass !== nextVNode.controlClass) {
     if (lastVNode.flags & VNodeFlags.InUse) {
       replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode, parentVNode);
     } else {
