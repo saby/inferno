@@ -30,7 +30,7 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
   } else if (vNode instanceof RawMarkupNode) {
     return mountHTML(vNode, parentDOM, nextNode);
   } else if (flags & VNodeFlags.WasabyControl || flags === 147456) {
-    mountWasabyControl(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentVNode);
+    mountWasabyControl(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
   } else if (flags & VNodeFlags.TemplateWasabyNode) {
     mountWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
   } else if (process.env.NODE_ENV !== 'production') {
@@ -536,7 +536,7 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
       events: vNode.controlEvents,
       internal: vNode.controlInternalProperties,
       user: vNode.controlProperties
-    }, vNode.key, environment, vNode.parentNode, vNode.serialized, vNode);
+    }, vNode.key, environment, parentControlNode, vNode.serialized, vNode);
     if (!controlNode.compound) {
       if (!controlNode.control._mounted && !controlNode.control._unmounted) {
         const control = controlNode.control;
@@ -627,14 +627,14 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
   return vNode;
 }
 
-export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG: boolean, nextNode: Element | null, lifecycle, isRootStart?: boolean, environment?: any, parentVNode?: any) {
+export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG: boolean, nextNode: Element | null, lifecycle, isRootStart?: boolean, environment?: any, parentControlNode?: any, parentVNode?: any) {
   if (!environment.infernoQueue) {
     environment.infernoQueue = [];
   }
   if (!environment.asyncRenderIds) {
     environment.asyncRenderIds = {};
   }
-  let VirtualNode = createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, undefined, parentVNode);
+  let VirtualNode = createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
   if (VirtualNode.carrier && VirtualNode.carrier.then) {
      if (VirtualNode.instance.control && VirtualNode.instance.control._forceUpdate) {
         environment.asyncRenderIds[VirtualNode.instance.id] = true;
