@@ -67,13 +67,13 @@ export function findDOMfromVNode(vNode: VNode, start: boolean) {
       // @ts-ignore
       if (!vNode.compound) {
         // @ts-ignore
-        return vNode.instance.element;
+        return vNode.instance.element || vNode.instance.markup.dom || null;
       } else {
         // @ts-ignore
-        return vNode.instance.markup.dom;
+        return vNode.instance.markup.dom || null;
       }
     } else if (flags & VNodeFlags.TemplateWasabyNode) {
-      return vNode.markup[0].dom;
+      return vNode.markup[0].dom || null;
     } else {
       vNode = children;
     }
