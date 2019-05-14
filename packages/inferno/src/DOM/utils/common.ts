@@ -19,7 +19,11 @@ export function insertOrAppend(parentDOM: Element, newNode, nextNode) {
   if (isNull(nextNode)) {
     appendChild(parentDOM, newNode);
   } else {
-    parentDOM.insertBefore(newNode, nextNode);
+    if (nextNode && nextNode.controlClass) {
+      parentDOM.insertBefore(newNode, findDOMfromVNode(nextNode, true));
+    } else {
+      parentDOM.insertBefore(newNode, nextNode);
+    }
   }
 }
 
@@ -66,6 +70,14 @@ export function findDOMfromVNode(vNode: VNode, start: boolean) {
     } else if (flags & VNodeFlags.WasabyControl) {
       // @ts-ignore
       if (!vNode.compound) {
+        // @ts-ignore
+        if (!vNode.instance.element || !vNode.instance.markup.dom) {
+          // @ts-ignore
+          if (vNode.instance.markup && vNode.instance.markup.instance) {
+            // @ts-ignore
+            return findDOMfromVNode(vNode.instance.markup);
+          }
+        }
         // @ts-ignore
         return vNode.instance.element || vNode.instance.markup.dom || null;
       } else {
