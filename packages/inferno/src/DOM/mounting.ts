@@ -640,6 +640,9 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
     environment.asyncRenderIds = {};
   }
   let VirtualNode = createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
+  if (parentVNode && parentVNode.controlClass) {
+    VirtualNode.sibling = parentVNode.sibling;
+  }
   if (VirtualNode.carrier && VirtualNode.carrier.then) {
      if (VirtualNode.instance.control && VirtualNode.instance.control._forceUpdate) {
         environment.asyncRenderIds[VirtualNode.instance.id] = true;
