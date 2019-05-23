@@ -298,7 +298,7 @@ function skipIgnoredNode(childNode) {
 
 // @ts-ignore
 function hydrateElement(vNode: VNode, parentDOM: Element, dom: Element, context: Object, isSVG: boolean, lifecycle: Function[], isRootStart?: boolean, environment?, parentControlNode?, parentVNode?) {
-  const props = vNode.props;
+  let props = vNode.props;
   const className = vNode.className;
   const flags = vNode.flags;
   let ref = vNode.ref;
@@ -336,6 +336,17 @@ function hydrateElement(vNode: VNode, parentDOM: Element, dom: Element, context:
       // when running hydrate we have to make sure all styles on dom elements are cleaned up
       if (!props.style) {
         _PS(undefined, undefined, dom);
+      }
+      if (vNode.type === 'iframe' && dom.nodeName === 'IFRAME') {
+        // @ts-ignore
+        if (props && props.src && dom.src && dom.src.indexOf(props.src) !== -1) {
+          props = Object.keys(props)
+            .filter(key => key !== 'src')
+            .reduce((obj, key) => {
+                obj[key] = props[key];
+              return obj;
+            }, {});
+        }
       }
       _MP(vNode, flags, props, dom, isSVG);
     }
