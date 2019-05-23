@@ -21,6 +21,8 @@ export function insertOrAppend(parentDOM: Element, newNode, nextNode) {
   } else {
     if (nextNode && nextNode.controlClass) {
       parentDOM.insertBefore(newNode, findDOMfromVNode(nextNode, true));
+    } else if (nextNode && nextNode.dom) {
+      parentDOM.insertBefore(newNode, nextNode.dom);
     } else {
       parentDOM.insertBefore(newNode, nextNode);
     }
