@@ -87,6 +87,10 @@ export function findDOMfromVNode(vNode: VNode, start: boolean) {
         return vNode.instance.markup.dom || null;
       }
     } else if (flags & VNodeFlags.TemplateWasabyNode) {
+      if (!vNode.markup[0].dom && (vNode.markup[0].template || vNode.markup[0].controlClass)) {
+        // @ts-ignore
+        return findDOMfromVNode(vNode.markup[0]);
+      }
       return vNode.markup[0].dom || null;
     } else {
       vNode = children;
