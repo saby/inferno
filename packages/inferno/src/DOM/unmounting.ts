@@ -39,9 +39,6 @@ export function unmount(vNode) {
   if (flags & VNodeFlags.Element) {
     ref = vNode.ref as any;
     const props = vNode.props;
-
-    unmountRef(ref);
-
     const childFlags = vNode.childFlags;
 
     if (!isNull(props)) {
@@ -54,12 +51,12 @@ export function unmount(vNode) {
         }
       }
     }
-
     if (childFlags & ChildFlags.MultipleChildren) {
       unmountAllChildren(children);
     } else if (childFlags === ChildFlags.HasVNodeChildren) {
       unmount(children as VNode);
     }
+    unmountRef(ref);
   } else if (flags & VNodeFlags.WasabyControl) {
     if (!vNode.compound) {
       unmount(vNode.instance.markup);
