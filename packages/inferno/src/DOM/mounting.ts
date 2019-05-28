@@ -727,6 +727,7 @@ export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, life
           node.ref = templateNodeEventRef[4];
       }
   });
+  vNode.childFlags = vNode.markup && vNode.markup.length ? vNode.key ? 8 : 4 : 0
   return vNode;
 }
 

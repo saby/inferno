@@ -387,10 +387,18 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
   const changedAttrs = DC.getChangedOptions(newAttrs, oldAttrs, false, {});
   const changedTemplate = lastVNode.template !== nextVNode.template;
   let nextInput;
+  nextVNode.childFlags = nextVNode.markup && nextVNode.markup.length ? nextVNode.key ? 8 : 4 : 0;
    if (changedOptions || changedAttrs || changedTemplate) {
    //    Logger.log('DirtyChecking (update template with changed options)', ['', '', changedOptions]);
       nextInput = getMarkupForTemplatedNode(nextVNode);
       nextInput.forEach(function (node) {
+        const nref = node.ref;
+        if (nextVNode.ref) {
+            node.ref = function (element) {
+                nref(element);
+                nextVNode.ref(element);
+            };
+        }
         if (node.hprops) {
             // @ts-ignore
             const setEventFunction = Hooks.setEventHooks(environment);
@@ -398,7 +406,8 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
             node.ref = templateNodeEventRef[4];
         }
       });
-      patchChildren(lastVNode.markup.flags, nextInput.flags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, null, lastVNode, lifecycle, environment, parentControlNode);
+      nextVNode.childFlags = nextInput && nextInput.length ? nextVNode.key ? 8 : 4 : 0
+      patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, null, lastVNode, lifecycle, environment, parentControlNode);
       nextVNode.markup = nextInput;
    } else {
       nextVNode.markup = lastVNode.markup;
