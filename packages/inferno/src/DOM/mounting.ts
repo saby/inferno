@@ -179,7 +179,7 @@ export function mountArrayChildren(children, dom: Element | null, context: Objec
     if (child.flags & VNodeFlags.InUse) {
       children[i] = child = directClone(child);
     }
-    if (child.controlClass) {
+    if (child.controlClass || child.template) {
       child.sibling = children[i+1];
     }
     mount(child, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNode);

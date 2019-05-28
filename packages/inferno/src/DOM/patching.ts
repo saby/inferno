@@ -375,6 +375,7 @@ function patchChildren(
 
 // @ts-ignore
 function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode) {
+  let nextNode = null;
   // @ts-ignore
   nextVNode.optionsVersions = collectObjectVersions(nextVNode.controlProperties);    // check current context field versions
     // check current context field versions
@@ -388,6 +389,9 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
   const changedTemplate = lastVNode.template !== nextVNode.template;
   let nextInput;
   nextVNode.childFlags = nextVNode.markup && nextVNode.markup.length ? nextVNode.key ? 8 : 4 : 0;
+  if (!nextVNode.hasOwnProperty('sibling')) {
+    nextVNode.sibling = lastVNode.sibling;
+  }
    if (changedOptions || changedAttrs || changedTemplate) {
    //    Logger.log('DirtyChecking (update template with changed options)', ['', '', changedOptions]);
       nextInput = getMarkupForTemplatedNode(nextVNode);
@@ -406,8 +410,13 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
             node.ref = templateNodeEventRef[4];
         }
       });
-      nextVNode.childFlags = nextInput && nextInput.length ? nextVNode.key ? 8 : 4 : 0
-      patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, null, lastVNode, lifecycle, environment, parentControlNode);
+      nextVNode.childFlags = nextInput && nextInput.length ? nextVNode.key ? 8 : 4 : 0;
+      if (nextVNode.sibling) {
+        if (nextVNode.sibling.dom) {
+          nextNode = nextVNode.sibling.dom;
+        }
+      }
+      patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, nextNode, lastVNode, lifecycle, environment, parentControlNode);
       nextVNode.markup = nextInput;
    } else {
       nextVNode.markup = lastVNode.markup;

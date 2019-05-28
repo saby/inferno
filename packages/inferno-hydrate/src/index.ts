@@ -138,6 +138,7 @@ function hydrateTemplateWasabyNode(vNode, parentDOM, currentDom, context, isSVG,
   const yVNode = _CWTN(vNode, parentDOM, currentDom, context, isSVG, lifecycle, environment, parentControlNode);
   yVNode.children = yVNode.markup;
   yVNode.childFlags = 12;
+  yVNode.sibling = vNode.sibling;
   hydrateChildren(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, environment, parentControlNode);
   return findLastDOMFromVNode(yVNode.markup[yVNode.markup.length - 1]);
 }
@@ -207,6 +208,12 @@ function hydrateChildren(parentVNode: VNode, parentNode, currentNode, context, i
 
       for (let i = 0, len = (children as VNode[]).length; i < len; ++i) {
         const child = (children as VNode[])[i];
+        
+        // @ts-ignore
+        if (child.controlClass || child.template) {
+          // @ts-ignore
+          child.sibling = children[i+1];
+        }
 
         if (isNull(currentNode) || (prevVNodeIsTextNode && (child.flags & VNodeFlags.Text) > 0)) {
           _M(child as VNode, parentNode, context, isSVG, currentNode, lifecycle, false, environment, parentControlNode, parentVNode);

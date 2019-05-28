@@ -113,6 +113,8 @@ export function removeAllChildren(dom: Element, vNode: VNode, children) {
 
   if (vNode.flags & VNodeFlags.Fragment) {
     removeVNodeDOM(vNode, dom);
+  } else if (vNode.flags & VNodeFlags.TemplateWasabyNode) {
+    removeVNodeDOM(vNode, dom);  
   } else {
     clearDOM(dom);
   }
