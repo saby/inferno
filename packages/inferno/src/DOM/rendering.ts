@@ -69,7 +69,7 @@ export function __render(
       if ((input as VNode).flags & VNodeFlags.InUse) {
         input = directClone(input as VNode);
       }
-      patch(rootInput as VNode, input as VNode, parentDOM as Element, context, false, null, lifecycle, environment, parentControlNode);
+      patch(rootInput as VNode, input as VNode, parentDOM as Element, context, false, null, lifecycle, isRootStart, environment, parentControlNode);
       rootInput = (parentDOM as any).$V = input as VNode;
     }
   }

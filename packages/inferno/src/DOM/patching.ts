@@ -13,20 +13,28 @@ import { mountRef, unmountRef } from '../core/refs';
 import { getDecoratedMarkup, collectObjectVersions } from '../wasaby/control'
 
 
-function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], environment?: any, parentControlNode?: any, parentVNode?: any) {
+function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], isRootStart?: boolean, environment?: any, parentControlNode?: any, parentVNode?: any) {
   unmount(lastVNode);
 
   if ((nextVNode.flags & lastVNode.flags & VNodeFlags.DOMRef) !== 0) {
-        // Single DOM operation, when we have dom references available
-        if (parentDOM.tagName === 'HTML' && nextVNode.type === 'html') {
-          mount(nextVNode, parentDOM, context, isSVG, null, lifecycle, true, environment, parentControlNode, nextVNode);
-      } else {
-          mount(nextVNode, null, context, isSVG, null, lifecycle, false, environment, parentControlNode, nextVNode);
+    // If we have controlNode, that starts not at the root HTMLElement and markup of this node is not the same
+    // as current dom, we have to remove current dom entirely and insert next markup in DOM
+    if (parentDOM.tagName === 'HTML' && nextVNode.type === 'html') {
+      mount(nextVNode, parentDOM, context, isSVG, null, lifecycle, true, environment, parentControlNode, nextVNode);
+    } else if (isRootStart && lastVNode.dom === parentDOM) {
+      mount(nextVNode, parentDOM, context, isSVG, null, lifecycle, true, environment, parentControlNode, nextVNode);
+      if (parentDOM.parentNode) {
+        // @ts-ignore
+        removeVNodeDOM(lastVNode, parentDOM.parentNode);
       }
+    } else {
       // Single DOM operation, when we have dom references available
-      if (parentDOM !== nextVNode.dom) {
-          replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
-      }
+      mount(nextVNode, null, context, isSVG, null, lifecycle, false, environment, parentControlNode, nextVNode);
+    }
+    // Single DOM operation, when we have dom references available
+    if (parentDOM !== nextVNode.dom) {
+      replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
+    }
   } else {
     mount(nextVNode, parentDOM, context, isSVG, findDOMfromVNode(lastVNode, true), lifecycle, false, environment, parentControlNode, parentVNode);
     removeVNodeDOM(lastVNode, parentDOM);
@@ -41,6 +49,7 @@ export function patch(
   isSVG: boolean,
   nextNode: Element | null,
   lifecycle: Function[],
+  isRootStart?: boolean,
   environment?: any,
   parentControlNode?: any,
   parentVNode?: any
@@ -59,7 +68,7 @@ export function patch(
   // @ts-ignore
   if (lastVNode.flags !== nextFlags || lastVNode.type !== nextVNode.type || lastVNode.key !== nextVNode.key || (nextFlags & VNodeFlags.ReCreate) !== 0 || lastVNode.controlClass !== nextVNode.controlClass) {
     if (lastVNode.flags & VNodeFlags.InUse) {
-      replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode, parentVNode);
+      replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
     } else {
       let dom = lastVNode.dom as Element;
       if (!dom && parentDOM) {
@@ -291,7 +300,7 @@ function patchChildren(
     case ChildFlags.HasVNodeChildren:
       switch (nextChildFlags) {
         case ChildFlags.HasVNodeChildren:
-          patch(lastChildren, nextChildren, parentDOM, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
+          patch(lastChildren, nextChildren, parentDOM, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNodeW);
           break;
         case ChildFlags.HasInvalidChildren:
           remove(lastChildren, parentDOM);
@@ -629,7 +638,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
 
       nextVNode.instance.markup.ref = controlNodeEventRef[4];
 
-      patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextInput.dom, lifecycle, environment, nextVNode.instance, nextInput);
+      patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextInput.dom, lifecycle, false, environment, nextVNode.instance, nextInput);
       nextVNode.instance.markup = nextInput;
       lifecycle.mount.push(mountWasabyCallback(childControlNode));
     } else {
@@ -738,7 +747,7 @@ function patchNonKeyedChildren(
       nextChild = nextChildren[i] = directClone(nextChild);
     }
 
-    patch(lastChild, nextChild, dom, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
+    patch(lastChild, nextChild, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNodeW);
     lastChildren[i] = nextChild;
   }
   if (lastChildrenLength < nextChildrenLength) {
@@ -789,7 +798,7 @@ function patchKeyedChildren(
       if (bNode.flags & VNodeFlags.InUse) {
         b[j] = bNode = directClone(bNode);
       }
-      patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, environment, parentControlNode, parentVNodeW);
+      patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
       a[j] = bNode;
       ++j;
       if (j > aEnd || j > bEnd) {
@@ -807,7 +816,7 @@ function patchKeyedChildren(
       if (bNode.flags & VNodeFlags.InUse) {
         b[bEnd] = bNode = directClone(bNode);
       }
-      patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, environment, parentControlNode, parentVNodeW);
+      patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
       a[aEnd] = bNode;
       aEnd--;
       bEnd--;
@@ -875,7 +884,7 @@ function patchKeyedChildren(
               if (bNode.flags & VNodeFlags.InUse) {
                 b[j] = bNode = directClone(bNode);
               }
-              patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, environment, parentControlNode, parentVNodeW);
+              patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
               ++patched;
               break;
             }
@@ -919,7 +928,7 @@ function patchKeyedChildren(
             if (bNode.flags & VNodeFlags.InUse) {
               b[j] = bNode = directClone(bNode);
             }
-            patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, environment, parentControlNode, parentVNodeW);
+            patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
             ++patched;
           } else if (!canRemoveWholeContent) {
             remove(aNode, dom);

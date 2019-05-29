@@ -385,7 +385,7 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
       // nextVNode.instance = controlNode;
       nextInput.ref = controlNode.markup.ref;
       // @ts-ignore
-      patch(controlNode.markup, nextInput, parentDOM, {}, false, controlElement, lifecycle, controlNode.environment, controlNode);
+      patch(controlNode.markup, nextInput, parentDOM, {}, false, controlElement, lifecycle, false, controlNode.environment, controlNode);
       controlNode.markup = nextInput;
       controlNode.fullMarkup = controlNode.markup;
       lifecycle.mount.push(mountWasabyCallback(controlNode));
