@@ -74,14 +74,17 @@ export function __render(
     }
   }
 
-  if (lifecycle.length > 0) {
-    callAll(lifecycle);
-  }
-  // @ts-ignore
-  if (lifecycle.mount.length > 0) {
+  if (Object.keys(environment.asyncRenderIds).length === 0) {
+    if (lifecycle.length > 0) {
+      callAll(lifecycle);
+    }
     // @ts-ignore
-    callAll(lifecycle.mount);
+    if (lifecycle.mount.length > 0) {
+      // @ts-ignore
+      callAll(lifecycle.mount);
+    }
   }
+
   if (isFunction(callback)) {
     (callback as Function)();
   }
