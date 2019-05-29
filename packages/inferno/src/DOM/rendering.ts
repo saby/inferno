@@ -74,7 +74,7 @@ export function __render(
     }
   }
 
-  if (Object.keys(environment.asyncRenderIds).length === 0) {
+  if (!environment.asyncRenderIds || Object.keys(environment.asyncRenderIds).length === 0) {
     if (lifecycle.length > 0) {
       callAll(lifecycle);
     }
