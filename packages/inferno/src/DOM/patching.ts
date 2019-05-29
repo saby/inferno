@@ -197,6 +197,12 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object
   isSVG = isSVG || (nextFlags & VNodeFlags.SvgElement) > 0;
 
   // inlined patchProps  -- starts --
+  if (nextVNode.hprops && nextVNode.hprops.events && Object.keys(nextVNode.hprops.events).length > 0) {
+    // @ts-ignore
+    const setEventFunction = Hooks.setEventHooks(environment);
+    const templateNodeEventRef = setEventFunction(nextVNode.type, nextVNode.hprops, nextVNode.children, nextVNode.key, parentControlNode, nextVNode.ref)
+    nextVNode.ref = templateNodeEventRef[4];
+  }
   if (lastProps !== nextProps) {
     const lastPropsOrEmpty = lastProps || EMPTY_OBJ;
     nextPropsOrEmpty = nextProps || EMPTY_OBJ;
