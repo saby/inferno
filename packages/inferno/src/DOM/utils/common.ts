@@ -19,7 +19,16 @@ export function insertOrAppend(parentDOM: Element, newNode, nextNode) {
   if (isNull(nextNode)) {
     appendChild(parentDOM, newNode);
   } else {
-    parentDOM.insertBefore(newNode, nextNode);
+    // @ts-ignore
+    if ((Env.detection.isIE10 || Env.detection.isIE11) && nextNode.nodeValue === '') {
+      if (parentDOM.firstChild) {
+        parentDOM.insertBefore(newNode, parentDOM.firstChild);
+      } else {
+        appendChild(parentDOM, newNode);
+      }
+    } else {
+      parentDOM.insertBefore(newNode, nextNode);
+    }
   }
 }
 
@@ -36,7 +45,14 @@ export function replaceChild(parentDOM: Element, newDom, lastDom) {
 }
 
 export function removeChild(parentDOM: Element, childNode: Element) {
-  parentDOM.removeChild(childNode);
+  // @ts-ignore
+  if ((Env.detection.isIE10 || Env.detection.isIE11) && nextNode.nodeValue === '') {
+    if (parentDOM.firstChild) {
+      parentDOM.removeChild(parentDOM.firstChild);
+    }
+  } else {
+    parentDOM.removeChild(childNode);
+  }
 }
 
 export function callAll(arrayFn: Function[]) {
