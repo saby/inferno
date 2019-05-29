@@ -46,7 +46,7 @@ export function replaceChild(parentDOM: Element, newDom, lastDom) {
 
 export function removeChild(parentDOM: Element, childNode: Element) {
   // @ts-ignore
-  if ((Env.detection.isIE10 || Env.detection.isIE11) && nextNode.nodeValue === '') {
+  if ((Env.detection.isIE10 || Env.detection.isIE11) && childNode.nodeValue === '') {
     if (parentDOM.firstChild) {
       parentDOM.removeChild(parentDOM.firstChild);
     }
