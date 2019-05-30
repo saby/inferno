@@ -658,7 +658,9 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
       nextVNode.instance = lastVNode.instance;
   }
   if (lastVNode.instance.markup && lastVNode.instance.markup.type === 'invisible-node') {
-    parentVNode.ref = lastVNode.ref;
+    if (lastVNode.ref) {
+      parentVNode.ref = lastVNode.ref;
+    }
   }
 }
 
