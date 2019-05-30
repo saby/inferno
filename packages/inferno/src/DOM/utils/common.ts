@@ -52,9 +52,13 @@ export function replaceChild(parentDOM: Element, newDom, lastDom) {
 
 export function removeChild(parentDOM: Element, childNode: Element) {
   // @ts-ignore
-  if ((Env.detection.isIE10 || Env.detection.isIE11) && childNode.nodeValue === '') {
-    if (parentDOM.firstChild) {
-      parentDOM.removeChild(parentDOM.firstChild);
+  if (Env.detection.isIE10 || Env.detection.isIE11) {
+    if (childNode.nodeValue === '') {
+      if (parentDOM.firstChild) {
+        parentDOM.removeChild(parentDOM.firstChild);
+      }
+    } else if (childNode.parentNode) {
+      parentDOM.removeChild(childNode);
     }
   } else {
     parentDOM.removeChild(childNode);
