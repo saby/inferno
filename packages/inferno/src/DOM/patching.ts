@@ -425,6 +425,7 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
             node.ref = templateNodeEventRef[4];
         }
       });
+      lastVNode.childFlags = lastVNode.markup && lastVNode.markup.length ? lastVNode.key ? 8 : 4 : 0;
       nextVNode.childFlags = nextInput && nextInput.length ? nextVNode.key ? 8 : 4 : 0;
       if (nextVNode.sibling) {
         if (nextVNode.sibling.dom) {
