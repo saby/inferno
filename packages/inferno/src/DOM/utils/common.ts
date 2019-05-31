@@ -48,8 +48,10 @@ export function removeChild(parentDOM: Element, childNode: Element) {
   // @ts-ignore
   if (Env.detection.isIE10 || Env.detection.isIE11) {
     if (childNode.nodeValue === '') {
-      if (parentDOM.firstChild) {
+      if (parentDOM.firstChild && parentDOM.childNodes && parentDOM.childNodes.length === 1) {
         parentDOM.removeChild(parentDOM.firstChild);
+      } else {
+        parentDOM.removeChild(childNode);
       }
     } else if (childNode.parentNode) {
       parentDOM.removeChild(childNode);
