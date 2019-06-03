@@ -50,7 +50,7 @@ export function removeChild(parentDOM: Element, childNode: Element) {
     if (childNode.nodeValue === '') {
       if (parentDOM.firstChild && parentDOM.childNodes && parentDOM.childNodes.length === 1) {
         parentDOM.removeChild(parentDOM.firstChild);
-      } else {
+      } else if (parentDOM.firstChild !== null) {
         parentDOM.removeChild(childNode);
       }
     } else if (childNode.parentNode) {
