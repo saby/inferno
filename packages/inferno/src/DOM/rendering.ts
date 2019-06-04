@@ -73,7 +73,10 @@ export function __render(
       rootInput = (parentDOM as any).$V = input as VNode;
     }
   }
-
+  if (isFunction(callback)) {
+    // @ts-ignore
+    lifecycle.mount.push(callback)
+  } 
   if (!environment.asyncRenderIds || Object.keys(environment.asyncRenderIds).length === 0) {
     if (lifecycle.length > 0) {
       callAll(lifecycle);
@@ -85,9 +88,6 @@ export function __render(
     }
   }
 
-  if (isFunction(callback)) {
-    (callback as Function)();
-  }
   if (isFunction(options.renderComplete)) {
     (options.renderComplete as Function)(rootInput, parentDOM as any);
   }
