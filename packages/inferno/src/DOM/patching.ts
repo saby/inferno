@@ -576,91 +576,180 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
       // @ts-ignore
              Compatible.createCombinedOptions(nextVNode.controlProperties, nextVNode.controlInternalProperties)
              : nextVNode.controlProperties;
+  if (lastVNode.carrier) {
+    lastVNode.carrier.then(function () {
+      // Атрибуты тоже учавствуют в DirtyChecking
+      if (changedOptions || changedInternalOptions || changedAttrs || changedContext) {
+        if (!nextVNode.compound) {
+          try {
+              let resolvedContext;
 
-  // Атрибуты тоже учавствуют в DirtyChecking
-  if (changedOptions || changedInternalOptions || changedAttrs || changedContext) {
-    if (!nextVNode.compound) {
-      try {
-          let resolvedContext;
-
-         //  Logger.log('DirtyChecking (update node with changed)', [
-         //      '',
-         //      '',
-         //      changedOptions || changedInternalOptions || changedAttrs || changedContext
-         //  ]);
-          environment.setRebuildIgnoreId(childControlNode.id);
-          // @ts-ignore
-          OptionsResolver.resolveInheritOptions(childControlNode.controlClass, childControlNode, newOptions);
-          childControl.saveInheritOptions(childControlNode.inheritOptions);
-          // @ts-ignore
-          resolvedContext = ContextResolver.resolveContext(childControlNode.controlClass, newChildNodeContext, childControlNode.control);
-          // @ts-ignore
-          OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, parentControlNode.control._moduleName);
-          // Forbid force update in the time between _beforeUpdate and _afterUpdate
-          // @ts-ignore
-          ReactiveObserver.pauseReactive(childControl, () => {
-            // Forbid force update in the time between _beforeUpdate and _afterUpdate
-            beforeUpdateResults = childControl._beforeUpdate && childControl.__beforeUpdate(newOptions, resolvedContext);
-          });
-          childControl._options = newOptions;
-          shouldUpdate = (childControl._shouldUpdate ? childControl._shouldUpdate(newOptions, resolvedContext) : true) || changedInternalOptions;
-          childControl._setInternalOptions(changedInternalOptions || {});
-          childControlNode.oldOptions = oldOptions;    // TODO Для afterUpdate подумать, как еще можно передать
-          // TODO Для afterUpdate подумать, как еще можно передать
-          childControlNode.oldContext = oldChildNodeContext;    // TODO Для afterUpdate подумать, как еще можно передать
-          // TODO Для afterUpdate подумать, как еще можно передать
-          childControlNode.attributes = nextVNode.controlAttributes;
-          childControlNode.events = nextVNode.controlEvents;
-          childControl._saveContextObject(resolvedContext);
-          // @ts-ignore
-          childControl.saveFullContext(ContextResolver.wrapContext(childControl, childControl._context));
-      } finally {
-          /**
-           * TODO: удалить после синхронизации с контролами
-           */
-          const shouldUp = childControl._shouldUpdate ? childControl._shouldUpdate(newOptions, newChildNodeContext) || changedInternalOptions : true;
-          childControl._setInternalOptions(changedInternalOptions || {});
-          if (shouldUp) {
-              environment.setRebuildIgnoreId(null);
+            //  Logger.log('DirtyChecking (update node with changed)', [
+            //      '',
+            //      '',
+            //      changedOptions || changedInternalOptions || changedAttrs || changedContext
+            //  ]);
+              environment.setRebuildIgnoreId(childControlNode.id);
+              // @ts-ignore
+              OptionsResolver.resolveInheritOptions(childControlNode.controlClass, childControlNode, newOptions);
+              childControl.saveInheritOptions(childControlNode.inheritOptions);
+              // @ts-ignore
+              resolvedContext = ContextResolver.resolveContext(childControlNode.controlClass, newChildNodeContext, childControlNode.control);
+              // @ts-ignore
+              OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, parentControlNode.control._moduleName);
+              // Forbid force update in the time between _beforeUpdate and _afterUpdate
+              // @ts-ignore
+              ReactiveObserver.pauseReactive(childControl, () => {
+                // Forbid force update in the time between _beforeUpdate and _afterUpdate
+                beforeUpdateResults = childControl._beforeUpdate && childControl.__beforeUpdate(newOptions, resolvedContext);
+              });
+              childControl._options = newOptions;
+              shouldUpdate = (childControl._shouldUpdate ? childControl._shouldUpdate(newOptions, resolvedContext) : true) || changedInternalOptions;
+              childControl._setInternalOptions(changedInternalOptions || {});
+              childControlNode.oldOptions = oldOptions;    // TODO Для afterUpdate подумать, как еще можно передать
+              // TODO Для afterUpdate подумать, как еще можно передать
+              childControlNode.oldContext = oldChildNodeContext;    // TODO Для afterUpdate подумать, как еще можно передать
+              // TODO Для afterUpdate подумать, как еще можно передать
+              childControlNode.attributes = nextVNode.controlAttributes;
+              childControlNode.events = nextVNode.controlEvents;
+              childControl._saveContextObject(resolvedContext);
+              // @ts-ignore
+              childControl.saveFullContext(ContextResolver.wrapContext(childControl, childControl._context));
+          } finally {
+              /**
+               * TODO: удалить после синхронизации с контролами
+               */
+              const shouldUp = childControl._shouldUpdate ? childControl._shouldUpdate(newOptions, newChildNodeContext) || changedInternalOptions : true;
+              childControl._setInternalOptions(changedInternalOptions || {});
+              if (shouldUp) {
+                  environment.setRebuildIgnoreId(null);
+              }
+              childControlNode.options = newOptions;
+              childControlNode.context = newChildNodeContext;
+              if (!nextVNode.compound) {
+                  childControlNode.internalOptions = nextVNode.controlInternalProperties;
+              }
           }
-          childControlNode.options = newOptions;
-          childControlNode.context = newChildNodeContext;
-          if (!nextVNode.compound) {
-              childControlNode.internalOptions = nextVNode.controlInternalProperties;
+          // @ts-ignore
+          childControlNode.control.saveFullContext(ContextResolver.wrapContext(childControlNode.control, childControlNode.context || {}));
+          // @ts-ignore
+          const nextInput = getDecoratedMarkup(childControlNode, false);
+          nextVNode.instance = childControlNode;
+          nextInput.ref = nextVNode.instance.markup.ref;
+
+          // @ts-ignore
+          const setEventFunction = Hooks.setEventHooks(environment);
+          const controlNodeEventRef = setEventFunction(childControlNode.markup.type, {
+            attributes: nextVNode.controlAttributes,
+            events: (childControlNode.markup.hprops && childControlNode.markup.hprops.events) || nextVNode.controlEvents
+          }, childControlNode.markup.children, childControlNode.key, childControlNode, childControlNode.markup.ref);
+
+          nextVNode.instance.markup.ref = controlNodeEventRef[4];
+
+          patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextInput.dom, lifecycle, false, environment, nextVNode.instance, nextInput);
+          nextVNode.instance.markup = nextInput;
+          lifecycle.mount.push(mountWasabyCallback(childControlNode));
+        } else {
+          if (changedOptions) {
+            childControl.setProperties(changedOptions);
+            childControlNode.options = childControl._options;
           }
+          nextVNode.instance = childControlNode;
+        }
+      } else {
+          nextVNode.instance = lastVNode.instance;
       }
-      // @ts-ignore
-      childControlNode.control.saveFullContext(ContextResolver.wrapContext(childControlNode.control, childControlNode.context || {}));
-      // @ts-ignore
-      const nextInput = getDecoratedMarkup(childControlNode, false);
-      nextVNode.instance = childControlNode;
-      nextInput.ref = nextVNode.instance.markup.ref;
-
-      // @ts-ignore
-      const setEventFunction = Hooks.setEventHooks(environment);
-      const controlNodeEventRef = setEventFunction(childControlNode.markup.type, {
-        attributes: nextVNode.controlAttributes,
-        events: (childControlNode.markup.hprops && childControlNode.markup.hprops.events) || nextVNode.controlEvents
-      }, childControlNode.markup.children, childControlNode.key, childControlNode, childControlNode.markup.ref);
-
-      nextVNode.instance.markup.ref = controlNodeEventRef[4];
-
-      patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextInput.dom, lifecycle, false, environment, nextVNode.instance, nextInput);
-      nextVNode.instance.markup = nextInput;
-      lifecycle.mount.push(mountWasabyCallback(childControlNode));
-    } else {
-      if (changedOptions) {
-        childControl.setProperties(changedOptions);
-        childControlNode.options = childControl._options;
+      if (lastVNode.instance.markup && lastVNode.instance.markup.type === 'invisible-node') {
+        if (lastVNode.ref) {
+          parentVNode.ref = lastVNode.ref;
+        }
       }
-      nextVNode.instance = childControlNode;
-    }
+    });
   } else {
-      nextVNode.instance = lastVNode.instance;
-  }
-  if (lastVNode.instance.markup && lastVNode.instance.markup.type === 'invisible-node') {
-    if (lastVNode.ref) {
-      parentVNode.ref = lastVNode.ref;
+    if (changedOptions || changedInternalOptions || changedAttrs || changedContext) {
+      if (!nextVNode.compound) {
+        try {
+            let resolvedContext;
+
+          //  Logger.log('DirtyChecking (update node with changed)', [
+          //      '',
+          //      '',
+          //      changedOptions || changedInternalOptions || changedAttrs || changedContext
+          //  ]);
+            environment.setRebuildIgnoreId(childControlNode.id);
+            // @ts-ignore
+            OptionsResolver.resolveInheritOptions(childControlNode.controlClass, childControlNode, newOptions);
+            childControl.saveInheritOptions(childControlNode.inheritOptions);
+            // @ts-ignore
+            resolvedContext = ContextResolver.resolveContext(childControlNode.controlClass, newChildNodeContext, childControlNode.control);
+            // @ts-ignore
+            OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, parentControlNode.control._moduleName);
+            // Forbid force update in the time between _beforeUpdate and _afterUpdate
+            // @ts-ignore
+            ReactiveObserver.pauseReactive(childControl, () => {
+              // Forbid force update in the time between _beforeUpdate and _afterUpdate
+              beforeUpdateResults = childControl._beforeUpdate && childControl.__beforeUpdate(newOptions, resolvedContext);
+            });
+            childControl._options = newOptions;
+            shouldUpdate = (childControl._shouldUpdate ? childControl._shouldUpdate(newOptions, resolvedContext) : true) || changedInternalOptions;
+            childControl._setInternalOptions(changedInternalOptions || {});
+            childControlNode.oldOptions = oldOptions;    // TODO Для afterUpdate подумать, как еще можно передать
+            // TODO Для afterUpdate подумать, как еще можно передать
+            childControlNode.oldContext = oldChildNodeContext;    // TODO Для afterUpdate подумать, как еще можно передать
+            // TODO Для afterUpdate подумать, как еще можно передать
+            childControlNode.attributes = nextVNode.controlAttributes;
+            childControlNode.events = nextVNode.controlEvents;
+            childControl._saveContextObject(resolvedContext);
+            // @ts-ignore
+            childControl.saveFullContext(ContextResolver.wrapContext(childControl, childControl._context));
+        } finally {
+            /**
+             * TODO: удалить после синхронизации с контролами
+             */
+            const shouldUp = childControl._shouldUpdate ? childControl._shouldUpdate(newOptions, newChildNodeContext) || changedInternalOptions : true;
+            childControl._setInternalOptions(changedInternalOptions || {});
+            if (shouldUp) {
+                environment.setRebuildIgnoreId(null);
+            }
+            childControlNode.options = newOptions;
+            childControlNode.context = newChildNodeContext;
+            if (!nextVNode.compound) {
+                childControlNode.internalOptions = nextVNode.controlInternalProperties;
+            }
+        }
+        // @ts-ignore
+        childControlNode.control.saveFullContext(ContextResolver.wrapContext(childControlNode.control, childControlNode.context || {}));
+        // @ts-ignore
+        const nextInput = getDecoratedMarkup(childControlNode, false);
+        nextVNode.instance = childControlNode;
+        nextInput.ref = nextVNode.instance.markup.ref;
+
+        // @ts-ignore
+        const setEventFunction = Hooks.setEventHooks(environment);
+        const controlNodeEventRef = setEventFunction(childControlNode.markup.type, {
+          attributes: nextVNode.controlAttributes,
+          events: (childControlNode.markup.hprops && childControlNode.markup.hprops.events) || nextVNode.controlEvents
+        }, childControlNode.markup.children, childControlNode.key, childControlNode, childControlNode.markup.ref);
+
+        nextVNode.instance.markup.ref = controlNodeEventRef[4];
+
+        patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextInput.dom, lifecycle, false, environment, nextVNode.instance, nextInput);
+        nextVNode.instance.markup = nextInput;
+        lifecycle.mount.push(mountWasabyCallback(childControlNode));
+      } else {
+        if (changedOptions) {
+          childControl.setProperties(changedOptions);
+          childControlNode.options = childControl._options;
+        }
+        nextVNode.instance = childControlNode;
+      }
+    } else {
+        nextVNode.instance = lastVNode.instance;
+    }
+    if (lastVNode.instance.markup && lastVNode.instance.markup.type === 'invisible-node') {
+      if (lastVNode.ref) {
+        parentVNode.ref = lastVNode.ref;
+      }
     }
   }
 }
