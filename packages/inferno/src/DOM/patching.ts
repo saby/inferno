@@ -796,7 +796,12 @@ function patchText(lastVNode: VNode, nextVNode: VNode, parentDOM: Element) {
     if (ie10or11) {
       if (dom && dom.parentNode) {
         // @ts-ignore
-        if (Env.detection.isIE10 || dom.nodeValue === '') {
+        const parentChildNodesLength = dom.parentNode.childNodes && dom.parentNode.childNodes.length === 1;
+        // We have to use innerText property only in the case when childNodes length of DOMNode are
+        // equal to 1, cause if don't do that, we will be in the situation of the whole parentNode
+        // childs removed
+        // @ts-ignore
+        if ((Env.detection.isIE10 || dom.nodeValue === '') && parentChildNodesLength) {
           // @ts-ignore
           dom.parentNode.innerText = nextText;
         } else {

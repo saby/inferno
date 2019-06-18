@@ -169,6 +169,11 @@ function hydrateComponent(vNode: VNode, parentDOM: Element, dom: Element, contex
 function hasOnlyIgnoredChildren(dom) {
   // Check if every childNode in `dom` is ignored
   let child = dom.firstChild;
+  // In case if we cheking 'head' for hydration, in order to keep head stable and not hydrated
+  // we have to return true
+  if (dom.tagName && dom.tagName === 'HEAD') {
+    return true;
+  }
   while (child && isIgnoredNode(child)) {
       child = child.nextSibling;
   }
