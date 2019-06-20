@@ -204,7 +204,7 @@ function afterMountProcess(controlNode) {
       }
   } catch (error) {
       // @ts-ignore
-      Logger.catchLifeCircleErrors('_afterMount', error, controlNode.control._moduleName);
+      catchLifeCircleErrors('_afterMount', error, controlNode.control._moduleName);
   }
 }
 function compoundMountProcess(controlNode) {
@@ -257,7 +257,7 @@ export function mountWasabyCallback(controlNode) {
                 }
             } catch (error) {
                 // @ts-ignore
-                Logger.catchLifeCircleErrors('_afterUpdate', error, controlNode.control._moduleName);
+                catchLifeCircleErrors('_afterUpdate', error, controlNode.control._moduleName);
             } finally {
                 // We need controlNode.oldOptions only in _afterUpdate method. Can delete them from node after using.
                 delete controlNode.oldOptions;
@@ -267,6 +267,10 @@ export function mountWasabyCallback(controlNode) {
   }
 }
 
+function catchLifeCircleErrors(hookName, error, moduleName) {
+  // @ts-ignore
+  Env.IoC.resolve("ILogger").log('LIFECYCLE ERROR. IN CONTROL ' + moduleName + '. HOOK NAME: ' + hookName, error, error);
+}
 
 function findTopConfig(configId) {
   return (configId + '').replace('cfg-', '').split(',')[0];
@@ -310,7 +314,7 @@ function getStateReadyOrCall(stateVar, control, vnode, serializer) {
   }
   catch (error) {
       // @ts-ignore
-      Logger.catchLifeCircleErrors('_beforeMount', error, control._moduleName);
+      catchLifeCircleErrors('_beforeMount', error, control._moduleName);
   }
   if (res && res.then) {
       res.then(function (resultDef) {
