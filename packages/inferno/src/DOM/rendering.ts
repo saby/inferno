@@ -21,12 +21,14 @@ let documentBody: HTMLElement | null = null;
 
 if (hasDocumentAvailable) {
   documentBody = document.body;
-  /*
-   * Defining $EV and $V properties on Node.prototype
-   * fixes v8 "wrong map" de-optimization
-   */
-  (Node.prototype as any).$EV = null;
-  (Node.prototype as any).$V = null;
+  if (typeof Node !== 'undefined') {
+    /*
+    * Defining $EV and $V properties on Node.prototype
+    * fixes v8 "wrong map" de-optimization
+    */
+    (Node.prototype as any).$EV = null;
+    (Node.prototype as any).$V = null;
+  }
 }
 
 export function __render(
