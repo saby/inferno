@@ -22,7 +22,12 @@ export function insertOrAppend(parentDOM: Element, newNode, nextNode) {
     // @ts-ignore
     if ((Env.detection.isIE10 || Env.detection.isIE11) && nextNode.nodeValue === '') {
       if (parentDOM.firstChild) {
-        parentDOM.insertBefore(newNode, parentDOM.firstChild);
+        // We have to use parentDOM.firstChild only in the case when it's childNodes length equals to 1
+        if (parentDOM.childNodes.length === 1) {
+          parentDOM.insertBefore(newNode, parentDOM.firstChild);
+        } else {
+          parentDOM.insertBefore(newNode, nextNode);
+        }
       } else {
         appendChild(parentDOM, newNode);
       }
