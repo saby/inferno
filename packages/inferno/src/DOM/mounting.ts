@@ -461,9 +461,9 @@ export function queueWasabyControlChanges(controlNode) {
     });
   }
 }
-function rerenderWasaby(queue) {
+export function rerenderWasaby(queue) {
   let component;
-  while ((component = queue.shift())) {
+  while ((component = queue.shift()) && Object.keys(component.environment.asyncRenderIds).length === 1) {
     if (component && component.control && component.control._mounted) {
       applyWasabyState(component, component.parentDOM);
     }
@@ -663,6 +663,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                  mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, VirtualNode);
               }
               if (Object.keys(environment.asyncRenderIds).length === 0) {
+                rerenderWasaby(environment.infernoQueue);
                 if (lifecycle.length > 0) {
                     let listener;
                     while ((listener = lifecycle.shift()) !== undefined) {

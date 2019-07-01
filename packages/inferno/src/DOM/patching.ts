@@ -2,7 +2,7 @@ import { combineFrom, isFunction, isInvalid, isNull, isNullOrUndef, unescape } f
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { directClone } from '../core/implementation';
 import { VNode } from '../core/types';
-import { mount, mountArrayChildren, mountTextContent, mountWasabyCallback, getMarkupForTemplatedNode } from './mounting';
+import { mount, mountArrayChildren, mountTextContent, mountWasabyCallback, getMarkupForTemplatedNode, rerenderWasaby } from './mounting';
 import { clearDOM, remove, removeAllChildren, unmount, unmountAllChildren } from './unmounting';
 import { appendChild, createDerivedState, EMPTY_OBJ, findDOMfromVNode, moveVNodeDOM, options, removeChild, removeVNodeDOM, replaceChild } from './utils/common';
 import { isControlledFormElement, processElement } from './wrappers/processElement';
@@ -11,6 +11,7 @@ import { handleComponentInput, renderNewInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
 import { mountRef, unmountRef } from '../core/refs';
 import { getDecoratedMarkup, collectObjectVersions } from '../wasaby/control'
+import { rerender } from 'inferno-compat';
 
 
 function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], isRootStart?: boolean, environment?: any, parentControlNode?: any, parentVNode?: any) {
@@ -663,6 +664,9 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
         if (lastVNode.ref) {
           parentVNode.ref = lastVNode.ref;
         }
+      }
+      if (Object.keys(nextVNode.instance.environment.asyncRenderIds).length === 0) {
+        rerenderWasaby(nextVNode.instance.environment.infernoQueue)
       }
     });
   } else {
