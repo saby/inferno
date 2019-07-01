@@ -19,12 +19,20 @@ export function insertOrAppend(parentDOM: Element, newNode, nextNode) {
   if (isNull(nextNode)) {
     appendChild(parentDOM, newNode);
   } else {
-    // @ts-ignore
-    if ((Env.detection.isIE10 || Env.detection.isIE11) && nextNode.nodeValue === '') {
-      if (parentDOM.firstChild) {
-        // We have to use parentDOM.firstChild only in the case when it's childNodes length equals to 1
-        if (parentDOM.childNodes.length === 1) {
-          parentDOM.insertBefore(newNode, parentDOM.firstChild);
+    if (nextNode && nextNode.controlClass) {
+      parentDOM.insertBefore(newNode, findDOMfromVNode(nextNode, true));
+    } else if (nextNode && nextNode.dom) {
+      parentDOM.insertBefore(newNode, nextNode.dom);
+    } else {
+      // @ts-ignore
+      if ((Env.detection.isIE10 || Env.detection.isIE11) && nextNode.nodeValue === '') {
+        if (parentDOM.firstChild) {
+          // We have to use parentDOM.firstChild only in the case when it's childNodes length equals to 1
+          if (parentDOM.childNodes.length === 1) {
+            parentDOM.insertBefore(newNode, parentDOM.firstChild);
+          } else {
+            parentDOM.insertBefore(newNode, nextNode);
+          }
         } else {
           parentDOM.insertBefore(newNode, nextNode);
         }

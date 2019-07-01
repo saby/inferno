@@ -463,7 +463,7 @@ export function queueWasabyControlChanges(controlNode) {
 }
 export function rerenderWasaby(queue) {
   let component;
-  while ((component = queue.shift()) && Object.keys(component.environment.asyncRenderIds).length === 1) {
+  while ((component = queue.pop()) && Object.keys(component.environment.asyncRenderIds).length === 0) {
     if (component && component.control && component.control._mounted) {
       applyWasabyState(component, component.parentDOM);
     }
