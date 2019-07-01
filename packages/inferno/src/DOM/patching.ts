@@ -11,7 +11,6 @@ import { handleComponentInput, renderNewInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
 import { mountRef, unmountRef } from '../core/refs';
 import { getDecoratedMarkup, collectObjectVersions } from '../wasaby/control'
-import { rerender } from 'inferno-compat';
 
 
 function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], isRootStart?: boolean, environment?: any, parentControlNode?: any, parentVNode?: any) {
