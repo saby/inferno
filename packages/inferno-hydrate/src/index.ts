@@ -1,6 +1,6 @@
 import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning, unescape } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
-import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, _SWCNH} from 'inferno';
+import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, _SWCNH, beforeRenderCallback} from 'inferno';
 
 function checkIfHydrationNeeded(sibling: Node | Element | null): boolean {
   // @ts-ignore
@@ -78,6 +78,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
               if (memo === 'hydrate') {
                   delete environment.asyncRenderIds[yVNode.instance.id];
                   yVNode = _SWCNH(yVNode.instance, yVNode, parentVNode, false, parentDOM, lifecycle, environment);
+                  lifecycle.mount.push(beforeRenderCallback(yVNode.instance));
                   hydrateVNode(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, vNode);
                   // @ts-ignore
                   lifecycle.mount.push(_MWWC(yVNode.instance));
@@ -125,8 +126,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                }
           };
       }
-
-
+      lifecycle.mount.push(beforeRenderCallback(yVNode.instance));
       currentNode = hydrateVNode(input, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, yVNode.instance, vNode);
       lifecycle.mount.push(_MWWC(yVNode.instance));
   }
@@ -134,8 +134,8 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
 }
 
 // @ts-ignore
-function hydrateTemplateWasabyNode(vNode, parentDOM, currentDom, context, isSVG, lifecycle, environment, parentControlNode, parentVNode?) {
-  const yVNode = _CWTN(vNode, parentDOM, currentDom, context, isSVG, lifecycle, environment, parentControlNode);
+function hydrateTemplateWasabyNode(vNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, parentVNode?) {
+  const yVNode = _CWTN(vNode, parentDOM, isSVG, vNode.sibling, lifecycle, isRootStart, environment, parentControlNode);
   yVNode.children = yVNode.markup;
   yVNode.childFlags = 12;
   yVNode.sibling = vNode.sibling;
@@ -442,7 +442,7 @@ function hydrateVNode(vNode: VNode, parentDOM: Element, currentDom: Element, con
     return hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
   }
   if (flags & VNodeFlags.TemplateWasabyNode) {
-      return hydrateTemplateWasabyNode(vNode, parentDOM, currentDom, context, isSVG, lifecycle, environment, parentControlNode, parentVNode);
+      return hydrateTemplateWasabyNode(vNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
   }
   if (process.env.NODE_ENV !== 'production') {
     throwError(`hydrate() expects a valid VNode, instead it received an object with the type "${typeof vNode}".`);

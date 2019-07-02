@@ -230,6 +230,21 @@ function compoundMountProcess(controlNode) {
   }
 }
 
+export function beforeRenderCallback(controlNode) {
+  return function () {
+    try {
+       if (!controlNode.control._destroyed) {
+        // @ts-ignore
+        const afterUpdateResult = controlNode.control._beforeRender && controlNode.control._beforeRender();
+      }
+    }
+    catch (error) {
+      // @ts-ignore
+      catchLifeCircleErrors('beforeRender', error, controlNode.control._moduleName);
+    }
+  }
+}
+
 export function mountWasabyCallback(controlNode) {
   return function () {
       if (controlNode.compound) {
@@ -250,6 +265,26 @@ export function mountWasabyCallback(controlNode) {
             /**
              * TODO: удалить после синхронизации с контролами
              */
+            try {
+                if (!controlNode.control._destroyed) {
+                    // @ts-ignore
+                    const afterUpdateResult = controlNode.control._afterRender && controlNode.control._afterRender();
+                }
+            }
+            catch (error) {
+                // @ts-ignore
+                catchLifeCircleErrors('afterRender', error, controlNode.control._moduleName);
+            }
+            try {
+                if (!controlNode.control._destroyed) {
+                    // @ts-ignore
+                    const afterUpdateResult = controlNode.control._beforePaint && controlNode.control._beforePaint();
+                }
+            }
+            catch (error) {
+                // @ts-ignore
+                catchLifeCircleErrors('beforePaint', error, controlNode.control._moduleName);
+            }
             try {
                 if (!controlNode.control._destroyed) {
                   // @ts-ignore
@@ -388,6 +423,7 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
       const controlElement = (nextInput.instance && nextInput.instance.markup.dom) || controlNode.element;
       // nextVNode.instance = controlNode;
       nextInput.ref = controlNode.markup.ref;
+      lifecycle.mount.push(beforeRenderCallback(controlNode));
       // @ts-ignore
       patch(controlNode.markup, nextInput, parentDOM, {}, false, controlElement, lifecycle, false, controlNode.environment, controlNode);
       controlNode.markup = nextInput;
@@ -660,7 +696,9 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                  if (VirtualNode.sibling) {
                    nextNode = VirtualNode.sibling;
                  }
+                 lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
                  mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, VirtualNode);
+                 lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
               }
               if (Object.keys(environment.asyncRenderIds).length === 0) {
                 rerenderWasaby(environment.infernoQueue);
@@ -696,12 +734,12 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
             queueWasabyControlChanges(VirtualNode.instance);
         };
      }
+     lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
      if (VirtualNode.compound || isInvisibleNode) {
         mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, vNode);
      }
+     lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
   }
-
-  lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
 }
 
 export function getMarkupForTemplatedNode(vNode) {

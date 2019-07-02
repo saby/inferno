@@ -2,7 +2,7 @@ import { combineFrom, isFunction, isInvalid, isNull, isNullOrUndef, unescape } f
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { directClone } from '../core/implementation';
 import { VNode } from '../core/types';
-import { mount, mountArrayChildren, mountTextContent, mountWasabyCallback, getMarkupForTemplatedNode, rerenderWasaby } from './mounting';
+import { mount, mountArrayChildren, mountTextContent, mountWasabyCallback, getMarkupForTemplatedNode, rerenderWasaby, beforeRenderCallback } from './mounting';
 import { clearDOM, remove, removeAllChildren, unmount, unmountAllChildren } from './unmounting';
 import { appendChild, createDerivedState, EMPTY_OBJ, findDOMfromVNode, moveVNodeDOM, options, removeChild, removeVNodeDOM, replaceChild } from './utils/common';
 import { isControlledFormElement, processElement } from './wrappers/processElement';
@@ -645,7 +645,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
           }, childControlNode.markup.children, childControlNode.key, childControlNode, childControlNode.markup.ref);
 
           nextVNode.instance.markup.ref = controlNodeEventRef[4];
-
+          lifecycle.mount.push(beforeRenderCallback(childControlNode));
           patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextInput.dom, lifecycle, false, environment, nextVNode.instance, nextInput);
           nextVNode.instance.markup = nextInput;
           lifecycle.mount.push(mountWasabyCallback(childControlNode));
@@ -735,7 +735,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
         }, childControlNode.markup.children, childControlNode.key, childControlNode, childControlNode.markup.ref);
 
         nextVNode.instance.markup.ref = controlNodeEventRef[4];
-
+        lifecycle.mount.push(beforeRenderCallback(childControlNode));
         patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextInput.dom, lifecycle, false, environment, nextVNode.instance, nextInput);
         nextVNode.instance.markup = nextInput;
         lifecycle.mount.push(mountWasabyCallback(childControlNode));
