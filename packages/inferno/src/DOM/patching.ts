@@ -111,7 +111,7 @@ export function patch(
     patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode, parentVNode);
     // @ts-ignore
   } else if (nextFlags & VNodeFlags.TemplateWasabyNode) {
-    patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode);
+    patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, nextNode, environment, parentControlNode);
     // @ts-ignore
   } else if (nextVNode instanceof RawMarkupNode) {
     patchHTML(lastVNode, nextVNode, parentDOM);
@@ -389,8 +389,8 @@ function patchChildren(
 }
 
 // @ts-ignore
-function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode) {
-  let nextNode = null;
+function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, nN, environment, parentControlNode) {
+  let nextNode = nN || null;
   // @ts-ignore
   nextVNode.optionsVersions = collectObjectVersions(nextVNode.controlProperties);    // check current context field versions
     // check current context field versions
