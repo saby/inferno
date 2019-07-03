@@ -701,7 +701,6 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                  lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
               }
               if (Object.keys(environment.asyncRenderIds).length === 0) {
-                rerenderWasaby(environment.infernoQueue);
                 if (lifecycle.length > 0) {
                     let listener;
                     while ((listener = lifecycle.shift()) !== undefined) {
@@ -713,6 +712,9 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                   while ((listener = lifecycle.mount.shift()) !== undefined) {
                       listener();
                   }
+                }
+                if (environment.infernoQueue && Object.keys(environment.infernoQueue).length !== 0) {
+                  rerenderWasaby(environment.infernoQueue);
                 }
               }
            } else {
