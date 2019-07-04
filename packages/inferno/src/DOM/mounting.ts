@@ -479,14 +479,24 @@ function applyWasabyState(component, pNode?) {
   }
 }
 // @ts-ignore
-export function queueWasabyControlChanges(controlNode) {
+export function queueWasabyControlChanges(controlNode, regular?) {
   const queue = controlNode.environment.infernoQueue;
   // @ts-ignore
-  if (queue.indexOf(controlNode) === -1 && queue.push(controlNode) === 1) {
+  if (regular) {
+    if (queue.indexOf(controlNode) === -1 && queue.unshift(controlNode) === 1) {
+      // @ts-ignore
+      runDelayed.default(() => {
+        rerenderWasaby(queue);
+      });
+    }
+  } else {
     // @ts-ignore
-    runDelayed.default(() => {
-      rerenderWasaby(queue);
-    });
+    if (queue.indexOf(controlNode) === -1 && queue.push(controlNode) === 1) {
+      // @ts-ignore
+      runDelayed.default(() => {
+        rerenderWasaby(queue);
+      });
+    }
   }
 }
 export function rerenderWasaby(queue) {
@@ -710,7 +720,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                 }
               }
            } else {
-               queueWasabyControlChanges(VirtualNode.instance);
+               queueWasabyControlChanges(VirtualNode.instance, true);
            }
         };
         VirtualNode.carrier.then(function (data) {
