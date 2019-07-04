@@ -615,7 +615,9 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
     vNode.instance = controlNode;
     vNode.instance.parentDOM = parentDOM;
     vNode.carrier = carrier;
-    mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
+    if (parentVNode) {
+      mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
+    }
   } else if (!controlNode.compound) {
     // @ts-ignore
     controlNode.control.saveFullContext(ContextResolver.wrapContext(controlNode.control, controlNode.context || {}));
@@ -763,7 +765,9 @@ export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, life
       const nref = node.ref;
       if (vNode.ref) {
         node.ref = function(element) {
-          nref(element);
+          if (nref) {
+            nref(element);
+          }
           vNode.ref(element);
         }
       }
