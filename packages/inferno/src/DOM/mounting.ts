@@ -432,48 +432,40 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
   }
 }
 
-/**
- * time interval in which it will check count of applyWasabyState calls
- * @type {number}
- */
-const MAX_UPDATE_INTERVAL = 10000;
-/**
- * maximum count of applyWasabyState calls which is considered normal in MAX_UPDATE_INTERVAL time interval
- * @type {number}
- */
-const MAX_UPDATE_COUNT = 10;
-/**
- * check if it's too many count of applyWasabyState calls in MAX_UPDATE_INTERVAL time interval
- * @param control
- */
-function checkUpdateCount(control) {
-  if (document && document.cookie && document.cookie.indexOf('s3debug=true') !== -1) {
-    if (!control.hasOwnProperty('_$forceUpdateLog')) {
-      control._$forceUpdateLog = [];
-    }
-    control._$forceUpdateLog.push(Date.now());
-    if (control._$forceUpdateLog.length >= MAX_UPDATE_COUNT) {
-      const update1 = control._$forceUpdateLog[control._$forceUpdateLog.length - MAX_UPDATE_COUNT];
-      const update2 = control._$forceUpdateLog[control._$forceUpdateLog.length - 1];
-
-      if (update2 - update1 < MAX_UPDATE_INTERVAL) {
-        warning('too many calls of applyWasabyState!!!');
-      }
-    }
-    if (control._$forceUpdateLog.length >= 10*MAX_UPDATE_COUNT) {
-      control._$forceUpdateLog = control._$forceUpdateLog.slice(control._$forceUpdateLog.length - MAX_UPDATE_COUNT, control._$forceUpdateLog.length);
-    }
-  }
-}
-
 function applyWasabyState(component, pNode?) {
   const lifecycle = [];
   // @ts-ignore
   lifecycle.mount = [];
   const controlContainer = (component.control._container && (component.control._container[0] || component.control._container));
+  const savedActiveElement = document.activeElement;
+  // @ts-ignore
+  const prevControls = goUpByControlTree.default(savedActiveElement);
   updateWasabyControl(component, pNode || controlContainer, lifecycle);
-  checkUpdateCount(component.control);
-
+  component.environment._restoreFocusState = true;    // если сразу после изменения DOM-дерева фокус слетел в body, пытаемся восстановить фокус на ближайший элемент от
+  // предыдущего активного, чтобы сохранить контекст фокуса и дать возможность управлять с клавиатуры
+  // если сразу после изменения DOM-дерева фокус слетел в body, пытаемся восстановить фокус на ближайший элемент от
+  // предыдущего активного, чтобы сохранить контекст фокуса и дать возможность управлять с клавиатуры
+  if (document.activeElement === document.body && document.activeElement !== savedActiveElement) {
+      prevControls.find(function (control) {
+          const container = control._container[0] ? control._container[0] : control._container;
+          // @ts-ignore
+          return isElementVisible(control._container) && Focus.focus(container);
+      });
+  }
+  component.environment._restoreFocusState = false;    // для совместимости, фокус устанавливаелся через старый механизм setActive, нужно восстановить фокус после _rebuild
+  // для совместимости, фокус устанавливаелся через старый механизм setActive, нужно восстановить фокус после _rebuild
+  if (component.control.__$focusing) {
+      component.control.activate();    // до синхронизации мы сохранили __$focusing - фокусируемый элемент, а после синхронизации здесь фокусируем его.
+                 // если не нашли фокусируемый элемент - значит в доме не оказалось этого элемента.
+                 // но мы все равно отменяем скинем флаг, чтобы он не сфокусировался позже когда уже не надо
+                 // https://online.sbis.ru/opendoc.html?guid=e46d87cc-5dc2-4f67-b39c-5eeea973b2cc
+      // до синхронизации мы сохранили __$focusing - фокусируемый элемент, а после синхронизации здесь фокусируем его.
+      // если не нашли фокусируемый элемент - значит в доме не оказалось этого элемента.
+      // но мы все равно отменяем скинем флаг, чтобы он не сфокусировался позже когда уже не надо
+      // https://online.sbis.ru/opendoc.html?guid=e46d87cc-5dc2-4f67-b39c-5eeea973b2cc
+      component.control.__$focusing = false;
+  }
+  component.environment.addTabListener();
   // Call all lifecycle if all async controls in current environment are updated.
   if (Object.keys(component.environment.asyncRenderIds).length === 0) {
     if (lifecycle.length > 0) {

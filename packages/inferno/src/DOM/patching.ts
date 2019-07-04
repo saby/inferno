@@ -36,7 +36,7 @@ function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: O
       replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
     }
   } else {
-    mount(nextVNode, parentDOM, context, isSVG, lastVNode.sibling || findDOMfromVNode(lastVNode, true), lifecycle, false, environment, parentControlNode, parentVNode);
+    mount(nextVNode, parentDOM, context, isSVG, lastVNode.sibling, lifecycle, false, environment, parentControlNode, parentVNode);
     removeVNodeDOM(lastVNode, parentDOM);
   }
 }
@@ -405,7 +405,9 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
   let nextInput;
   nextVNode.childFlags = nextVNode.markup && nextVNode.markup.length ? nextVNode.key ? 8 : 4 : 0;
   if (!nextVNode.hasOwnProperty('sibling')) {
-    nextVNode.sibling = lastVNode.sibling;
+    if (lastVNode.sibling && lastVNode.sibling.dom && document.contains(lastVNode.sibling.dom)) {
+       nextVNode.sibling = lastVNode.sibling;
+    }
   }
    if (changedOptions || changedAttrs || changedTemplate) {
    //    Logger.log('DirtyChecking (update template with changed options)', ['', '', changedOptions]);
@@ -1059,7 +1061,7 @@ function patchKeyedChildren(
             b[pos] = bNode = directClone(bNode);
           }
           nextPos = pos + 1;
-          mount(bNode, dom, context, isSVG, nextPos < bLength ? findDOMfromVNode(b[nextPos], true) : outerEdge, lifecycle);
+          mount(bNode, dom, context, isSVG, nextPos < bLength ? findDOMfromVNode(b[nextPos], true) : outerEdge, lifecycle, false, environment, parentControlNode, parentVNode);
         } else if (j < 0 || i !== seq[j]) {
           pos = i + bStart;
           bNode = b[pos];
