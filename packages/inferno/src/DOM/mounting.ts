@@ -724,7 +724,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
            } else {
               let asyncAwaitRenderItem;
               if (Object.keys(VirtualNode.instance.environment.asyncRenderIds).length === 0) {
-                  if (VirtualNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
+                  if (VirtualNode.instance.environment.asyncAwaitRenderQueue && VirtualNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
                         while ((asyncAwaitRenderItem = VirtualNode.instance.environment.asyncAwaitRenderQueue.pop())) {
                             queueWasabyControlChanges(asyncAwaitRenderItem, true);
                         }
@@ -749,7 +749,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
         VirtualNode.instance.control._forceUpdate = function () {
             let asyncAwaitRenderItem;
             if (Object.keys(VirtualNode.instance.environment.asyncRenderIds).length === 0) {
-                if (VirtualNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
+                if (VirtualNode.instance.environment.asyncAwaitRenderQueue && VirtualNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
                       while ((asyncAwaitRenderItem = VirtualNode.instance.environment.asyncAwaitRenderQueue.pop())) {
                           queueWasabyControlChanges(asyncAwaitRenderItem);
                       }

@@ -102,7 +102,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                 let asyncAwaitRenderItem;
                 if (Object.keys(yVNode.instance.environment.asyncRenderIds).length === 0) {
                    _queueWasabyControlChanges(yVNode.instance);
-                    if (yVNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
+                    if (yVNode.instance.environment.asyncAwaitRenderQueue && yVNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
                        while ((asyncAwaitRenderItem = yVNode.instance.environment.asyncAwaitRenderQueue.pop())) {
                          _queueWasabyControlChanges(asyncAwaitRenderItem);
                        }
@@ -126,7 +126,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                let asyncAwaitRenderItem;
                if (Object.keys(yVNode.instance.environment.asyncRenderIds).length === 0) {
                   _queueWasabyControlChanges(yVNode.instance);
-                   if (yVNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
+                   if (yVNode.instance.environment.asyncAwaitRenderQueue && yVNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
                       while ((asyncAwaitRenderItem = yVNode.instance.environment.asyncAwaitRenderQueue.pop())) {
                         _queueWasabyControlChanges(asyncAwaitRenderItem);
                       }
