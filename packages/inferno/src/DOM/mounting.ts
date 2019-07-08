@@ -615,9 +615,9 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
     vNode.instance = controlNode;
     vNode.instance.parentDOM = parentDOM;
     vNode.carrier = carrier;
-    if (parentVNode) {
-      mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
-    }
+    // if (parentVNode) {
+    //   mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
+    // }
   } else if (!controlNode.compound) {
     // @ts-ignore
     controlNode.control.saveFullContext(ContextResolver.wrapContext(controlNode.control, controlNode.context || {}));
@@ -700,9 +700,9 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                  if (VirtualNode.sibling) {
                    nextNode = VirtualNode.sibling;
                  }
-                 lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
+                //  lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
                  mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, VirtualNode);
-                 lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
+                //  lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
               }
               if (Object.keys(environment.asyncRenderIds).length === 0) {
                 if (lifecycle.length > 0) {
@@ -722,7 +722,17 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                 }
               }
            } else {
-               queueWasabyControlChanges(VirtualNode.instance, true);
+              let asyncAwaitRenderItem;
+              if (Object.keys(VirtualNode.instance.environment.asyncRenderIds).length === 0) {
+                  if (VirtualNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
+                        while ((asyncAwaitRenderItem = VirtualNode.instance.environment.asyncAwaitRenderQueue.pop())) {
+                            queueWasabyControlChanges(asyncAwaitRenderItem, true);
+                        }
+                    }
+                queueWasabyControlChanges(VirtualNode.instance, true);
+            } else {
+                VirtualNode.instance.environment.asyncAwaitRenderQueue.push(VirtualNode.instance);
+            }
            }
         };
         VirtualNode.carrier.then(function (data) {
@@ -737,7 +747,17 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
      const isInvisibleNode = VirtualNode.instance.markup && VirtualNode.instance.markup.type !== 'invisible-node';
      if (VirtualNode.instance.control && VirtualNode.instance.control._forceUpdate) {
         VirtualNode.instance.control._forceUpdate = function () {
-            queueWasabyControlChanges(VirtualNode.instance);
+            let asyncAwaitRenderItem;
+            if (Object.keys(VirtualNode.instance.environment.asyncRenderIds).length === 0) {
+                if (VirtualNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
+                      while ((asyncAwaitRenderItem = VirtualNode.instance.environment.asyncAwaitRenderQueue.pop())) {
+                          queueWasabyControlChanges(asyncAwaitRenderItem);
+                      }
+                  }
+              queueWasabyControlChanges(VirtualNode.instance, true);
+          } else {
+              VirtualNode.instance.environment.asyncAwaitRenderQueue.push(VirtualNode.instance);
+          }
         };
      }
      lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
