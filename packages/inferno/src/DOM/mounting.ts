@@ -700,9 +700,9 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                  if (VirtualNode.sibling) {
                    nextNode = VirtualNode.sibling;
                  }
-                //  lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
+                 lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
                  mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, VirtualNode);
-                //  lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
+                 lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
               }
               if (Object.keys(environment.asyncRenderIds).length === 0) {
                 if (lifecycle.length > 0) {
