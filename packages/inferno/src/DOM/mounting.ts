@@ -722,17 +722,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                 }
               }
            } else {
-              let asyncAwaitRenderItem;
-              if (Object.keys(VirtualNode.instance.environment.asyncRenderIds).length === 0) {
-                  if (VirtualNode.instance.environment.asyncAwaitRenderQueue && VirtualNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
-                        while ((asyncAwaitRenderItem = VirtualNode.instance.environment.asyncAwaitRenderQueue.pop())) {
-                            queueWasabyControlChanges(asyncAwaitRenderItem, true);
-                        }
-                    }
-                queueWasabyControlChanges(VirtualNode.instance, true);
-            } else {
-                VirtualNode.instance.environment.asyncAwaitRenderQueue.push(VirtualNode.instance);
-            }
+             queueWasabyControlChanges(VirtualNode.instance, true);
            }
         };
         VirtualNode.carrier.then(function (data) {
@@ -747,17 +737,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
      const isInvisibleNode = VirtualNode.instance.markup && VirtualNode.instance.markup.type !== 'invisible-node';
      if (VirtualNode.instance.control && VirtualNode.instance.control._forceUpdate) {
         VirtualNode.instance.control._forceUpdate = function () {
-            let asyncAwaitRenderItem;
-            if (Object.keys(VirtualNode.instance.environment.asyncRenderIds).length === 0) {
-                if (VirtualNode.instance.environment.asyncAwaitRenderQueue && VirtualNode.instance.environment.asyncAwaitRenderQueue.length !== 0) {
-                      while ((asyncAwaitRenderItem = VirtualNode.instance.environment.asyncAwaitRenderQueue.pop())) {
-                          queueWasabyControlChanges(asyncAwaitRenderItem);
-                      }
-                  }
-              queueWasabyControlChanges(VirtualNode.instance, true);
-          } else {
-              VirtualNode.instance.environment.asyncAwaitRenderQueue.push(VirtualNode.instance);
-          }
+          queueWasabyControlChanges(VirtualNode.instance, true);
         };
      }
      lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
