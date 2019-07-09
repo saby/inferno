@@ -170,9 +170,10 @@ export function moveVNodeDOM(vNode, parentDOM, nextNode) {
 
   if (flags & VNodeFlags.DOMRef) {
     insertOrAppend(parentDOM, vNode.dom, nextNode);
+  } else if (flags & VNodeFlags.WasabyControl) {
+    insertOrAppend(parentDOM, vNode.instance.element, nextNode);
   } else {
-    const children = vNode.children as any;
-
+    const children = vNode.children as any || vNode.markup as any;
     if (flags & VNodeFlags.ComponentClass) {
       moveVNodeDOM(children.$LI, parentDOM, nextNode);
     } else if (flags & VNodeFlags.ComponentFunction) {
@@ -184,6 +185,10 @@ export function moveVNodeDOM(vNode, parentDOM, nextNode) {
         for (let i = 0, len = children.length; i < len; ++i) {
           moveVNodeDOM(children[i], parentDOM, nextNode);
         }
+      }
+    } else if (flags & VNodeFlags.TemplateWasabyNode) {
+      for (let i = 0, len = children.length; i < len; ++i) {
+        moveVNodeDOM(children[i], parentDOM, nextNode);
       }
     }
   }
