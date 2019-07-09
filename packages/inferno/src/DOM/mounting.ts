@@ -89,6 +89,148 @@ export function mountTextContent(dom: Element, children: string): void {
   dom.textContent = children as string;
 }
 
+function closest(sourceElement, rootElement) {
+  while (sourceElement.parentNode) {
+      sourceElement = sourceElement.parentNode;
+      if (sourceElement === rootElement) {
+        return true;
+      }
+  }
+  return false;
+}
+
+function fireEvent(e) {
+  if (!this._rootDOMNode) {
+      return;
+  }
+  const relatedTarget = e.relatedTarget || document.body;
+  const target = e.target;
+  const evt = document.createEvent('Events');
+  evt.initEvent('keydown', true, true);
+  let shifted = false;
+  if (target.className === 'vdom-focus-in') {
+      if (closest(relatedTarget, this._rootDOMNode)) {
+          // в vdom-focus-in прилетели либо изнутри контейнера, либо сверху потому что зациклились, shift - только если изнутри
+          if (!(relatedTarget.classList.contains('vdom-focus-out') && this._rootDOMNode['ws-tab-cycling'] === 'true')) {
+              shifted = true;
+          }
+      }
+  }
+  if (target.className === 'vdom-focus-out') {
+      if (!closest(relatedTarget, this._rootDOMNode)) {
+          // в vdom-focus-out прилетели либо снаружи контейнера, либо снизу потому что зациклились, shift - и если снаружи и если зациклились
+          shifted = true;
+      }
+  }
+  // @ts-ignore
+  evt.view = window;
+  // @ts-ignore
+  evt.altKey = false;
+  // @ts-ignore
+  evt.ctrlKey = false;
+  // @ts-ignore
+  evt.shiftKey = shifted;
+  // @ts-ignore
+  evt.metaKey = false;
+  // @ts-ignore
+  evt.keyCode = 9;
+  target.dispatchEvent(evt);
+}
+
+function findFirstVNode(arr) {
+  if (!Array.isArray(arr)) {
+      return null;
+  }
+  return arr.find(function (value) {
+      return !!value;
+  });
+}
+
+function appendFocusesElements(self, vnode) {
+  const firstChild = findFirstVNode(vnode.children);
+  const fireTab = function (e) {
+          fireEvent.call(self, e);
+      };
+  const hookOut = function hookOut(node) {
+          if (node) {
+              node.addEventListener('focus', fireTab);
+          }
+      };    // добавляем ноды vdom-focus-in и vdom-focus-out тольео если есть какие-то внутренние ноды
+  // добавляем ноды vdom-focus-in и vdom-focus-out тольео если есть какие-то внутренние ноды
+  if (firstChild && firstChild.key !== 'vdom-focus-in') {
+      const focusInNode = createVNode(getFlagsForElementVnode('a'), 'a', 'vdom-focus-in', [], 0, {
+              class: 'vdom-focus-in',
+              tabindex: '1'
+          }, 'vdom-focus-in', hookOut);
+      const focusOutNode = createVNode(getFlagsForElementVnode('a'), 'a', 'vdom-focus-out', [], 0, {
+              class: 'vdom-focus-in',
+              tabindex: '0'
+          }, 'vdom-focus-out', hookOut);
+      // @ts-ignore       
+      vnode.children = [].concat(focusInNode, vnode.children, focusOutNode);
+      return {in: focusInNode, out: focusOutNode};
+  }
+  return false;
+}
+
+  /**
+     * We have to find focus elements, that belongs to the specific rootNode
+     * @param elem
+     * @param cssClass
+     * @returns {*}
+     */
+    /**
+     * We have to find focus elements, that belongs to the specific rootNode
+     * @param elem
+     * @param cssClass
+     * @returns {*}
+     */
+    function findDirectChildren(elem, cssClass) {
+      return Array.prototype.filter.call(elem.children, function (el) {
+          return el.matches(cssClass);
+      });
+  }    /**
+   * We have to insert focus elements are already in the DOM,  before virtual dom synchronization
+   * @param rootElement
+   */
+  /**
+   * We have to insert focus elements are already in the DOM,  before virtual dom synchronization
+   * @param rootElement
+   */
+  function appendFocusElementsToDOM(rootElement, appendedElements) {
+    const firstChild = rootElement.firstChild;
+    if (firstChild && firstChild.classList && !firstChild.classList.contains('vdom-focus-in')) {
+        const vdomFocusInElems = findDirectChildren(rootElement, '.vdom-focus-in');
+        const vdomFocusOutElems = findDirectChildren(rootElement, '.vdom-focus-out');
+        const focusInElem = vdomFocusInElems.length ? vdomFocusInElems[0] : document.createElement('a');
+        focusInElem.classList.add('vdom-focus-in');
+        focusInElem.tabIndex = 1;
+        const focusOutElem = vdomFocusOutElems.length ? vdomFocusOutElems[0] : document.createElement('a');
+        focusOutElem.classList.add('vdom-focus-out');
+        focusOutElem.tabIndex = 0;
+        rootElement.insertBefore(focusInElem, firstChild);
+        rootElement.appendChild(focusOutElem);
+        appendedElements.in.dom = focusInElem;
+        appendedElements.out.dom = focusOutElem;
+        return true;
+    }
+    return false;
+}
+
+export function appendForFocuses(vNode, environment) {
+  if (vNode.type === 'body') {
+      if (vNode && vNode.children)  {
+          const appendedElements = appendFocusesElements(environment, vNode);
+      if (appendedElements) {
+          const bodyDOM = vNode.dom;
+          if (bodyDOM) {
+              appendFocusElementsToDOM(bodyDOM, appendedElements);
+          }
+      }
+  }        
+}
+}
+
 export function mountElement(vNode: VNode, parentDOM: Element | null, context: Object, isSVG: boolean, nextNode: Element | null, lifecycle: Function[], isRootStart?: boolean, environment?: any, parentControlNode?: any): void {
   const flags = vNode.flags;
   const props = vNode.props;
@@ -100,7 +242,7 @@ export function mountElement(vNode: VNode, parentDOM: Element | null, context: O
   let dom = isRootStart && parentDOM ? parentDOM : documentCreateElement(vNode.type, isSVG);
 
   vNode.dom = dom;
-
+  appendForFocuses(vNode, environment);
   if (!isNullOrUndef(className) && className !== '') {
     if (dom) {
       if (isSVG) {

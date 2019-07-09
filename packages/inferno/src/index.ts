@@ -28,7 +28,8 @@ import {
   createWasabyTemplateNode,
   queueWasabyControlChanges,
   setWasabyControlNodeHooks,
-  beforeRenderCallback
+  beforeRenderCallback,
+  appendForFocuses
 } from './DOM/mounting';
 import { createRef, forwardRef, mountRef } from './core/refs';
 import { nextTickWasaby } from './wasaby/control';
@@ -93,5 +94,6 @@ export {
   callAll as _callAll,
   nextTickWasaby,
   setWasabyControlNodeHooks as _SWCNH,
-  beforeRenderCallback
+  beforeRenderCallback,
+  appendForFocuses
 };

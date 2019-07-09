@@ -1,6 +1,6 @@
 import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning, unescape } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
-import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, _SWCNH, beforeRenderCallback} from 'inferno';
+import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, _SWCNH, beforeRenderCallback, appendForFocuses} from 'inferno';
 
 function checkIfHydrationNeeded(sibling: Node | Element | null): boolean {
   // @ts-ignore
@@ -64,6 +64,9 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
   const input = yVNode.instance.markup;
   let currentNode;
   if (input.type === 'invisible-node') {
+    if (input.props && input.props.tabindex) {
+      delete input.props.tabindex;
+    } 
     currentNode = parentDOM;
   } else {
     currentNode = currentDom;
@@ -375,7 +378,7 @@ function hydrateElement(vNode: VNode, parentDOM: Element, dom: Element, context:
     }
     _MR(ref, dom, lifecycle);
   }
-
+  appendForFocuses(vNode, environment);
   return vNode.dom;
 }
 

@@ -2,7 +2,7 @@ import { combineFrom, isFunction, isInvalid, isNull, isNullOrUndef, unescape } f
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { directClone } from '../core/implementation';
 import { VNode } from '../core/types';
-import { mount, mountArrayChildren, mountTextContent, mountWasabyCallback, getMarkupForTemplatedNode, rerenderWasaby, beforeRenderCallback } from './mounting';
+import { mount, mountArrayChildren, mountTextContent, mountWasabyCallback, getMarkupForTemplatedNode, rerenderWasaby, beforeRenderCallback, appendForFocuses } from './mounting';
 import { clearDOM, remove, removeAllChildren, unmount, unmountAllChildren } from './unmounting';
 import { appendChild, createDerivedState, EMPTY_OBJ, findDOMfromVNode, moveVNodeDOM, options, removeChild, removeVNodeDOM, replaceChild } from './utils/common';
 import { isControlledFormElement, processElement } from './wrappers/processElement';
@@ -276,6 +276,7 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object
   if (lastRef !== nextRef) {
     unmountRef(lastRef);
     mountRef(nextRef, dom, lifecycle);
+    appendForFocuses(nextVNode, environment);
   }
 }
 
