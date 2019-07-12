@@ -322,8 +322,11 @@ export function mountArrayChildren(children, dom: Element | null, context: Objec
       children[i] = child = directClone(child);
     }
     if (child.controlClass || child.template) {
-      child.sibling = children[i+1];
+      if (!child.sibling) {
+        child.sibling = children[i + 1];
+      }
     }
+
     mount(child, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNode);
   }
 }
@@ -624,26 +627,20 @@ function applyWasabyState(component, pNode?) {
 export function queueWasabyControlChanges(controlNode, regular?) {
   const queue = controlNode.environment.infernoQueue;
   // @ts-ignore
-  if (regular) {
-    if (queue.indexOf(controlNode) === -1 && queue.unshift(controlNode) === 1) {
-      // @ts-ignore
-      runDelayed.default(() => {
-        rerenderWasaby(queue);
-      });
-    }
-  } else {
-    // @ts-ignore
-    if (queue.indexOf(controlNode) === -1 && queue.push(controlNode) === 1) {
-      // @ts-ignore
-      runDelayed.default(() => {
-        rerenderWasaby(queue);
-      });
+  if (queue.indexOf(controlNode) === -1) {
+    if (regular) {
+      queue.unshift(controlNode);
+    } else {
+      queue.push(controlNode);
     }
   }
+  runDelayed.default(() => {
+    rerenderWasaby(queue, controlNode.environment);
+  });
 }
-export function rerenderWasaby(queue) {
+export function rerenderWasaby(queue, environment) {
   let component;
-  while ((component = queue.pop()) && Object.keys(component.environment.asyncRenderIds).length === 0) {
+  while (Object.keys(environment.asyncRenderIds).length === 0 && (component = queue.pop())) {
     if (component && component.control && component.control._mounted) {
       applyWasabyState(component, component.parentDOM);
     }
@@ -840,7 +837,11 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
               if (VirtualNode.compound || (VirtualNode.instance.markup && VirtualNode.instance.markup.type !== 'invisible-node')) {
                  VirtualNode = setWasabyControlNodeHooks(VirtualNode.instance, VirtualNode, parentVNode, isRootStart, parentDOM, lifecycle, environment);
                  if (VirtualNode.sibling) {
-                   nextNode = VirtualNode.sibling;
+                   if (VirtualNode.sibling.dom) {
+                     nextNode = VirtualNode.sibling.dom;
+                   } else {
+                     nextNode = VirtualNode.sibling;
+                   }     
                  }
                  lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
                  mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, VirtualNode);
@@ -860,7 +861,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                   }
                 }
                 if (environment.infernoQueue && Object.keys(environment.infernoQueue).length !== 0) {
-                  rerenderWasaby(environment.infernoQueue);
+                  rerenderWasaby(environment.infernoQueue, environment);
                 }
               }
            } else {
@@ -927,6 +928,16 @@ export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, life
 // @ts-ignore
 function mountWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
   const yVNode = createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode);
+  let lastChild;
+  if (vNode.sibling) {
+    if (yVNode.markup.length) {
+      lastChild = yVNode.markup[yVNode.markup.length - 1];
+      lastChild.sibling = vNode.sibling;
+    }
+    if (vNode.sibling.dom) {
+      nextNode = vNode.sibling.dom;
+    }
+  }
   mountArrayChildren(yVNode.markup, parentDOM, {}, isSVG, nextNode, lifecycle, environment, parentControlNode);
 }
 
