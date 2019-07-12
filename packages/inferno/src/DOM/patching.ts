@@ -229,6 +229,7 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object
       }
     }
   }
+  appendForFocuses(nextVNode, environment);
   const nextChildren = nextVNode.children;
   const nextClassName = nextVNode.className;
 
@@ -276,7 +277,6 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object
   if (lastRef !== nextRef) {
     unmountRef(lastRef);
     mountRef(nextRef, dom, lifecycle);
-    appendForFocuses(nextVNode, environment);
   }
 }
 
@@ -668,7 +668,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
         }
       }
       if (Object.keys(nextVNode.instance.environment.asyncRenderIds).length === 0) {
-        rerenderWasaby(nextVNode.instance.environment.infernoQueue)
+        rerenderWasaby(nextVNode.instance.environment.infernoQueue, nextVNode.instance.environment)
       }
     });
   } else {

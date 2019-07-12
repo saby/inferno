@@ -83,8 +83,6 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                   yVNode = _SWCNH(yVNode.instance, yVNode, parentVNode, false, parentDOM, lifecycle, environment);
                   lifecycle.mount.push(beforeRenderCallback(yVNode.instance));
                   hydrateVNode(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, vNode);
-                  // @ts-ignore
-                  lifecycle.mount.push(_MWWC(yVNode.instance));
                   if (Object.keys(environment.asyncRenderIds).length === 0) {
                       if (lifecycle.length > 0) {
                           let listener;
