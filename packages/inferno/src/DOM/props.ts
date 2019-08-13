@@ -108,16 +108,6 @@ export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boole
       dom[prop] = !!nextValue;
       break;
     case 'defaultChecked':
-    case 'value':
-    case 'volume':
-      if (hasControlledValue && prop === 'value') {
-        break;
-      }
-      const value = isNullOrUndef(nextValue) ? '' : nextValue;
-      if (dom[prop] !== value) {
-        dom[prop] = value;
-      }
-      break;
     case 'style':
       patchStyle(lastValue, nextValue, dom);
       break;
@@ -144,6 +134,19 @@ export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boole
     case 'ws-creates-context':
       break;
     case 'ws-delegates-tabfocus':
+      break;
+    case 'value':
+      if (hasControlledValue) {
+        break;
+      }
+    // fallthrough
+    case 'title':
+    case 'volume':
+      if (isNullOrUndef(nextValue)) {
+        dom.removeAttribute(prop);
+      } else {
+        dom.setAttribute(prop, nextValue);
+      }
       break;
     default:
       if (delegatedEvents[prop]) {

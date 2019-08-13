@@ -83,6 +83,8 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                   yVNode = _SWCNH(yVNode.instance, yVNode, parentVNode, false, parentDOM, lifecycle, environment);
                   lifecycle.mount.push(beforeRenderCallback(yVNode.instance));
                   hydrateVNode(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, vNode);
+                  // @ts-ignore
+                  // lifecycle.mount.push(inferno._MWWC(yVNode.instance));
                   if (Object.keys(environment.asyncRenderIds).length === 0) {
                       if (lifecycle.length > 0) {
                           let listener;
@@ -165,6 +167,16 @@ function hydrateComponent(vNode: VNode, parentDOM: Element, dom: Element, contex
   }
 
   return currentNode;
+}
+
+// We have to ignore hydration on <head> tag completely.
+// Because we don't need to modify or compare real <head> with generated one
+// due to inconsistency of data on SSR/client.
+function headGetsHydrated(dom) {
+  if (dom.tagName && dom.tagName === 'HEAD') {
+    return false;
+  }
+  return true;
 }
 
 function hasOnlyIgnoredChildren(dom) {
@@ -342,9 +354,9 @@ function hydrateElement(vNode: VNode, parentDOM: Element, dom: Element, context:
     }
   } else {
     vNode.dom = dom;
-
-    hydrateChildren(vNode, dom, dom.firstChild, context, isSVG, lifecycle, environment, parentControlNode);
-
+    if (headGetsHydrated(dom)) {
+      hydrateChildren(vNode, dom, dom.firstChild, context, isSVG, lifecycle, environment, parentControlNode);
+    }
     if (!isNull(props)) {
       // when running hydrate we have to make sure all styles on dom elements are cleaned up
       if (!props.style) {

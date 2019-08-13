@@ -19,7 +19,7 @@ export function insertOrAppend(parentDOM: Element, newNode, nextNode) {
   if (isNull(nextNode)) {
     appendChild(parentDOM, newNode);
   } else {
-    if (nextNode && nextNode.controlClass) {
+    if (nextNode && (nextNode.controlClass || nextNode.template)) {
       parentDOM.insertBefore(newNode, findDOMfromVNode(nextNode, true));
     } else if (nextNode && nextNode.dom) {
       parentDOM.insertBefore(newNode, nextNode.dom);
@@ -114,11 +114,15 @@ export function findDOMfromVNode(vNode: VNode, start: boolean) {
         return vNode.instance.markup.dom || null;
       }
     } else if (flags & VNodeFlags.TemplateWasabyNode) {
-      if (!vNode.markup[0].dom && (vNode.markup[0].template || vNode.markup[0].controlClass)) {
-        // @ts-ignore
-        return findDOMfromVNode(vNode.markup[0]);
+      if (vNode.markup[0]) {
+        if (!vNode.markup[0].dom && (vNode.markup[0].template || vNode.markup[0].controlClass)) {
+          // @ts-ignore
+          return findDOMfromVNode(vNode.markup[0]);
+        }
+        return vNode.markup[0].dom || null;
+      } else {
+        return null;
       }
-      return vNode.markup[0].dom || null;
     } else {
       vNode = children;
     }

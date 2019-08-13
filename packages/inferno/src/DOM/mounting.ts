@@ -11,6 +11,10 @@ import { createNode, getDecoratedMarkup, collectObjectVersions } from '../wasaby
 // @ts-ignore
 import { createWriteStream } from 'fs';
 
+function ifRawMarkupNode(vNode) {
+  return vNode && vNode.hasOwnProperty('nodeProperties') && vNode.hasOwnProperty('markup');
+}
+
 export function mount(vNode: VNode, parentDOM: Element | null, context: Object, isSVG: boolean, nextNode: Element | null, lifecycle: Function[], isRootStart?: boolean, environment?: any, parentControlNode?: any, parentVNode?: any): void {
   const flags = (vNode.flags |= VNodeFlags.InUse);
 
@@ -27,7 +31,7 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
   } else if (flags & VNodeFlags.Portal) {
     mountPortal(vNode, context, parentDOM, nextNode, lifecycle);
     // @ts-ignore
-  } else if (vNode instanceof RawMarkupNode) {
+  } else if (vNode instanceof RawMarkupNode || ifRawMarkupNode(vNode)) {
     return mountHTML(vNode, parentDOM, nextNode);
   } else if (flags & VNodeFlags.WasabyControl || flags === 147456) {
     mountWasabyControl(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
@@ -584,7 +588,7 @@ function applyWasabyState(component, pNode?) {
   const controlContainer = (component.control._container && (component.control._container[0] || component.control._container));
   const savedActiveElement = document.activeElement;
   // @ts-ignore
-  const prevControls = goUpByControlTree.default(savedActiveElement);
+  const prevControls = goUpByControlTree.goUpByControlTree(savedActiveElement);
   updateWasabyControl(component, pNode || controlContainer, lifecycle);
   component.environment._restoreFocusState = true;    // если сразу после изменения DOM-дерева фокус слетел в body, пытаемся восстановить фокус на ближайший элемент от
   // предыдущего активного, чтобы сохранить контекст фокуса и дать возможность управлять с клавиатуры
@@ -634,7 +638,9 @@ export function queueWasabyControlChanges(controlNode, regular?) {
       queue.push(controlNode);
     }
   }
+  // @ts-ignore
   runDelayed.default(() => {
+    queue.sort((a, b) => b - a);
     rerenderWasaby(queue, controlNode.environment);
   });
 }

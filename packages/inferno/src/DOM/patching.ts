@@ -277,6 +277,7 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object
   if (lastRef !== nextRef) {
     unmountRef(lastRef);
     mountRef(nextRef, dom, lifecycle);
+    appendForFocuses(nextVNode, environment);
   }
 }
 
@@ -435,7 +436,7 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
           nextNode = nextVNode.sibling.dom;
         }
       }
-      patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, nextNode, lastVNode, lifecycle, environment, parentControlNode);
+     patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, nextNode || lastVNode.sibling || null, lastVNode, lifecycle, environment, parentControlNode);
       nextVNode.markup = nextInput;
    } else {
       nextVNode.markup = lastVNode.markup;
@@ -907,6 +908,14 @@ function patchKeyedChildren(
       if (bNode.flags & VNodeFlags.InUse) {
         b[j] = bNode = directClone(bNode);
       }
+      // @ts-ignore
+      if (bNode.controlClass || bNode.template) {
+        // @ts-ignore
+        if (!bNode.sibling && b[j + 1]) {
+          // @ts-ignore
+          bNode.sibling = b[j + 1];
+        }
+      }
       patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
       a[j] = bNode;
       ++j;
@@ -924,6 +933,14 @@ function patchKeyedChildren(
     while (aNode.key === bNode.key) {
       if (bNode.flags & VNodeFlags.InUse) {
         b[bEnd] = bNode = directClone(bNode);
+      }
+      // @ts-ignore
+      if (bNode.controlClass || bNode.template) {
+        // @ts-ignore
+        if (!bNode.sibling && b[j - 1]) {
+          // @ts-ignore
+          bNode.sibling = b[j - 1];
+        }
       }
       patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
       a[aEnd] = bNode;
