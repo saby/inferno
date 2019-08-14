@@ -490,7 +490,7 @@ function patchText(lastVNode: VNode, nextVNode: VNode, parentDOM: Element) {
   const nextText = unescape(nextVNode.children as string);
   const dom = lastVNode.dom;
 
-  if (nextText !== lastVNode.children) {
+  if (nextText !== lastVNode.children && lastVNode.children !== nextVNode.children) {
     // inner text has to be just for IE 10 and for EmptyTextNode
     // EmptyTextNode - implementation of empty string value
     // You can't set nodeValue property in EmptyTextNode
