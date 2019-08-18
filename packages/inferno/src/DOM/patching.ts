@@ -660,6 +660,10 @@ function patchKeyedChildren(
     if (bLength < 4 || (aLeft | bLeft) < 32) {
       for (i = aStart; i <= aEnd; ++i) {
         aNode = a[i];
+        // FIXME: holy crutch: Forbid removing head virtual node
+        if (aNode.type === 'head') {
+          continue;
+        }
         if (patched < bLeft) {
           for (j = bStart; j <= bEnd; j++) {
             bNode = b[j];

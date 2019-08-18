@@ -6,10 +6,6 @@ import { EMPTY_OBJ, findDOMfromVNode, removeVNodeDOM } from './utils/common';
 import { unmountRef } from '../core/refs';
 
 export function remove(vNode: VNode, parentDOM: Element | null) {
-  // FIXME: holy crutch: Forbid removing head virtual node
-  if (vNode.type === 'head') {
-    return;
-  }
 
   unmount(vNode);
 
