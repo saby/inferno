@@ -489,26 +489,28 @@ export function hydrate(input, parentDOM: Element, callback?: Function, isRootSt
         }
       }
     }
-
+  }
+  if (isFunction(callback)) {
+    // @ts-ignore
+    lifecycle.mount.push(callback);
+  }
+  // We have to wait for any async controls that's in hydration stage till we can call mount callbacks
+  // @ts-ignore
+  if (!environment.asyncRenderIds || Object.keys(environment.asyncRenderIds).length === 0) {
     if (lifecycle.length > 0) {
-      let listener;
+      var listener;
       while ((listener = lifecycle.shift()) !== undefined) {
         listener();
       }
     }
     // @ts-ignore
     if (lifecycle.mount.length > 0) {
-      let listener;
+      var listener$1;
       // @ts-ignore
-      while ((listener = lifecycle.mount.shift()) !== undefined) {
-        listener();
+      while ((listener$1 = lifecycle.mount.shift()) !== undefined) {
+        listener$1();
       }
     }
   }
-
   (parentDOM as any).$V = input;
-
-  if (isFunction(callback)) {
-    callback();
-  }
 }

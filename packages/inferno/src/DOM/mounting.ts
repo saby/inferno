@@ -159,7 +159,7 @@ function appendFocusesElements(self, vnode) {
           if (node) {
               node.addEventListener('focus', fireTab);
           }
-      };    // добавляем ноды vdom-focus-in и vdom-focus-out тольео если есть какие-то внутренние ноды
+      };
   // добавляем ноды vdom-focus-in и vdom-focus-out тольео если есть какие-то внутренние ноды
   if (firstChild && firstChild.key !== 'vdom-focus-in') {
       const focusInNode = createVNode(getFlagsForElementVnode('a'), 'a', 'vdom-focus-in', [], 0, {
@@ -167,7 +167,7 @@ function appendFocusesElements(self, vnode) {
               tabindex: '1'
           }, 'vdom-focus-in', hookOut);
       const focusOutNode = createVNode(getFlagsForElementVnode('a'), 'a', 'vdom-focus-out', [], 0, {
-              class: 'vdom-focus-in',
+              class: 'vdom-focus-out',
               tabindex: '0'
           }, 'vdom-focus-out', hookOut);
       // @ts-ignore       
