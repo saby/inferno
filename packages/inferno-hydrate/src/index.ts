@@ -467,6 +467,7 @@ function hydrateVNode(vNode: VNode, parentDOM: Element, currentDom: Element, con
 
 export function hydrate(input, parentDOM: Element, callback?: Function, isRootStart?: boolean, environment?, parentControlNode?) {
   let dom = isRootStart ? parentDOM : parentDOM.firstChild as Element;
+  const lifecycle: Function[] = [];
 
   if (isNull(dom)) {
     if (process.env.NODE_ENV !== 'production') {
@@ -474,7 +475,6 @@ export function hydrate(input, parentDOM: Element, callback?: Function, isRootSt
     }
     render(input, parentDOM, callback, {}, isRootStart, environment, parentControlNode);
   } else {
-    const lifecycle: Function[] = [];
     // @ts-ignore
     lifecycle.mount = [];
 
@@ -497,8 +497,10 @@ export function hydrate(input, parentDOM: Element, callback?: Function, isRootSt
   // We have to wait for any async controls that's in hydration stage till we can call mount callbacks
   // @ts-ignore
   if (!environment.asyncRenderIds || Object.keys(environment.asyncRenderIds).length === 0) {
+    // @ts-ignore
     if (lifecycle.length > 0) {
       var listener;
+      // @ts-ignore
       while ((listener = lifecycle.shift()) !== undefined) {
         listener();
       }

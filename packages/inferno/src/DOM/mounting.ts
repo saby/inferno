@@ -640,7 +640,7 @@ export function queueWasabyControlChanges(controlNode, regular?) {
   }
   // @ts-ignore
   runDelayed.default(() => {
-    queue.sort((a, b) => b - a);
+    queue.sort((a, b) => b.idCount - a.idCount);
     rerenderWasaby(queue, controlNode.environment);
   });
 }
