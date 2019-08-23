@@ -229,6 +229,7 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object
       }
     }
   }
+  appendForFocuses(nextVNode, environment);
   const nextChildren = nextVNode.children;
   const nextClassName = nextVNode.className;
 
@@ -435,7 +436,7 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
           nextNode = nextVNode.sibling.dom;
         }
       }
-      patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, nextNode, lastVNode, lifecycle, environment, parentControlNode);
+     patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, nextNode || lastVNode.sibling || null, lastVNode, lifecycle, environment, parentControlNode);
       nextVNode.markup = nextInput;
    } else {
       nextVNode.markup = lastVNode.markup;
@@ -668,7 +669,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
         }
       }
       if (Object.keys(nextVNode.instance.environment.asyncRenderIds).length === 0) {
-        rerenderWasaby(nextVNode.instance.environment.infernoQueue)
+        rerenderWasaby(nextVNode.instance.environment.infernoQueue, nextVNode.instance.environment)
       }
     });
   } else {
@@ -795,7 +796,7 @@ function patchText(lastVNode: VNode, nextVNode: VNode, parentDOM: Element) {
   const nextText = unescape(nextVNode.children as string);
   const dom = lastVNode.dom;
 
-  if (nextText !== lastVNode.children) {
+  if (nextText !== lastVNode.children && lastVNode.children !== nextVNode.children) {
     // inner text has to be just for IE 10 and for EmptyTextNode
     // EmptyTextNode - implementation of empty string value
     // You can't set nodeValue property in EmptyTextNode
@@ -907,6 +908,14 @@ function patchKeyedChildren(
       if (bNode.flags & VNodeFlags.InUse) {
         b[j] = bNode = directClone(bNode);
       }
+      // @ts-ignore
+      if (bNode.controlClass || bNode.template) {
+        // @ts-ignore
+        if (!bNode.sibling && b[j + 1]) {
+          // @ts-ignore
+          bNode.sibling = b[j + 1];
+        }
+      }
       patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
       a[j] = bNode;
       ++j;
@@ -924,6 +933,14 @@ function patchKeyedChildren(
     while (aNode.key === bNode.key) {
       if (bNode.flags & VNodeFlags.InUse) {
         b[bEnd] = bNode = directClone(bNode);
+      }
+      // @ts-ignore
+      if (bNode.controlClass || bNode.template) {
+        // @ts-ignore
+        if (!bNode.sibling && b[j - 1]) {
+          // @ts-ignore
+          bNode.sibling = b[j - 1];
+        }
       }
       patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
       a[aEnd] = bNode;

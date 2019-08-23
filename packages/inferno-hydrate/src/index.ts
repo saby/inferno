@@ -84,7 +84,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                   lifecycle.mount.push(beforeRenderCallback(yVNode.instance));
                   hydrateVNode(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, vNode);
                   // @ts-ignore
-                  lifecycle.mount.push(_MWWC(yVNode.instance));
+                  // lifecycle.mount.push(inferno._MWWC(yVNode.instance));
                   if (Object.keys(environment.asyncRenderIds).length === 0) {
                       if (lifecycle.length > 0) {
                           let listener;
@@ -167,6 +167,16 @@ function hydrateComponent(vNode: VNode, parentDOM: Element, dom: Element, contex
   }
 
   return currentNode;
+}
+
+// We have to ignore hydration on <head> tag completely.
+// Because we don't need to modify or compare real <head> with generated one
+// due to inconsistency of data on SSR/client.
+function headGetsHydrated(dom) {
+  if (dom.tagName && dom.tagName === 'HEAD') {
+    return false;
+  }
+  return true;
 }
 
 function hasOnlyIgnoredChildren(dom) {
@@ -344,9 +354,9 @@ function hydrateElement(vNode: VNode, parentDOM: Element, dom: Element, context:
     }
   } else {
     vNode.dom = dom;
-
-    hydrateChildren(vNode, dom, dom.firstChild, context, isSVG, lifecycle, environment, parentControlNode);
-
+    if (headGetsHydrated(dom)) {
+      hydrateChildren(vNode, dom, dom.firstChild, context, isSVG, lifecycle, environment, parentControlNode);
+    }
     if (!isNull(props)) {
       // when running hydrate we have to make sure all styles on dom elements are cleaned up
       if (!props.style) {
@@ -457,6 +467,7 @@ function hydrateVNode(vNode: VNode, parentDOM: Element, currentDom: Element, con
 
 export function hydrate(input, parentDOM: Element, callback?: Function, isRootStart?: boolean, environment?, parentControlNode?) {
   let dom = isRootStart ? parentDOM : parentDOM.firstChild as Element;
+  const lifecycle: Function[] = [];
 
   if (isNull(dom)) {
     if (process.env.NODE_ENV !== 'production') {
@@ -464,7 +475,6 @@ export function hydrate(input, parentDOM: Element, callback?: Function, isRootSt
     }
     render(input, parentDOM, callback, {}, isRootStart, environment, parentControlNode);
   } else {
-    const lifecycle: Function[] = [];
     // @ts-ignore
     lifecycle.mount = [];
 
@@ -479,26 +489,30 @@ export function hydrate(input, parentDOM: Element, callback?: Function, isRootSt
         }
       }
     }
-
+  }
+  if (isFunction(callback)) {
+    // @ts-ignore
+    lifecycle.mount.push(callback);
+  }
+  // We have to wait for any async controls that's in hydration stage till we can call mount callbacks
+  // @ts-ignore
+  if (!environment.asyncRenderIds || Object.keys(environment.asyncRenderIds).length === 0) {
+    // @ts-ignore
     if (lifecycle.length > 0) {
-      let listener;
+      var listener;
+      // @ts-ignore
       while ((listener = lifecycle.shift()) !== undefined) {
         listener();
       }
     }
     // @ts-ignore
     if (lifecycle.mount.length > 0) {
-      let listener;
+      var listener$1;
       // @ts-ignore
-      while ((listener = lifecycle.mount.shift()) !== undefined) {
-        listener();
+      while ((listener$1 = lifecycle.mount.shift()) !== undefined) {
+        listener$1();
       }
     }
   }
-
   (parentDOM as any).$V = input;
-
-  if (isFunction(callback)) {
-    callback();
-  }
 }

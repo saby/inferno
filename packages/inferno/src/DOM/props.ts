@@ -145,6 +145,13 @@ export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boole
       break;
     case 'ws-delegates-tabfocus':
       break;
+    case 'title':
+      if (isNullOrUndef(nextValue)) {
+        dom.removeAttribute(prop);
+      } else {
+        dom.setAttribute(prop, nextValue);
+      }
+      break;
     default:
       if (delegatedEvents[prop]) {
         if (

@@ -134,6 +134,7 @@ export function validateVNodeElementChildren(vNode) {
     if (vNode.flags & VNodeFlags.TextareaElement) {
       throwError("textarea elements can't have children.");
     }
+    /* COMMENTED UNUSED AND USELESS CODE
     if (vNode.flags & VNodeFlags.Element) {
       const voidTypes = {
         area: true,
@@ -153,15 +154,17 @@ export function validateVNodeElementChildren(vNode) {
         track: true,
         wbr: true
       };
-      const tag = vNode.type.toLowerCase();
-
-      if (tag === 'media') {
-        throwError("media elements can't have children.");
-      }
-      if (voidTypes[tag]) {
-        throwError(`${tag} elements can't have children.`);
+      let tag = vNode.type.toLowerCase();
+      if (false) {
+        if (tag === 'media') {
+          throwError("media elements can't have children.");
+        }
+        if (voidTypes[tag]) {
+          throwError((tag + " elements can't have children."));
+        }
       }
     }
+    */
   }
 }
 

@@ -11,6 +11,10 @@ import { createNode, getDecoratedMarkup, collectObjectVersions } from '../wasaby
 // @ts-ignore
 import { createWriteStream } from 'fs';
 
+function ifRawMarkupNode(vNode) {
+  return vNode && vNode.hasOwnProperty('nodeProperties') && vNode.hasOwnProperty('markup');
+}
+
 export function mount(vNode: VNode, parentDOM: Element | null, context: Object, isSVG: boolean, nextNode: Element | null, lifecycle: Function[], isRootStart?: boolean, environment?: any, parentControlNode?: any, parentVNode?: any): void {
   const flags = (vNode.flags |= VNodeFlags.InUse);
 
@@ -27,7 +31,7 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
   } else if (flags & VNodeFlags.Portal) {
     mountPortal(vNode, context, parentDOM, nextNode, lifecycle);
     // @ts-ignore
-  } else if (vNode instanceof RawMarkupNode) {
+  } else if (vNode instanceof RawMarkupNode || ifRawMarkupNode(vNode)) {
     return mountHTML(vNode, parentDOM, nextNode);
   } else if (flags & VNodeFlags.WasabyControl || flags === 147456) {
     mountWasabyControl(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
@@ -155,7 +159,7 @@ function appendFocusesElements(self, vnode) {
           if (node) {
               node.addEventListener('focus', fireTab);
           }
-      };    // добавляем ноды vdom-focus-in и vdom-focus-out тольео если есть какие-то внутренние ноды
+      };
   // добавляем ноды vdom-focus-in и vdom-focus-out тольео если есть какие-то внутренние ноды
   if (firstChild && firstChild.key !== 'vdom-focus-in') {
       const focusInNode = createVNode(getFlagsForElementVnode('a'), 'a', 'vdom-focus-in', [], 0, {
@@ -163,7 +167,7 @@ function appendFocusesElements(self, vnode) {
               tabindex: '1'
           }, 'vdom-focus-in', hookOut);
       const focusOutNode = createVNode(getFlagsForElementVnode('a'), 'a', 'vdom-focus-out', [], 0, {
-              class: 'vdom-focus-in',
+              class: 'vdom-focus-out',
               tabindex: '0'
           }, 'vdom-focus-out', hookOut);
       // @ts-ignore       
@@ -322,8 +326,11 @@ export function mountArrayChildren(children, dom: Element | null, context: Objec
       children[i] = child = directClone(child);
     }
     if (child.controlClass || child.template) {
-      child.sibling = children[i+1];
+      if (!child.sibling) {
+        child.sibling = children[i + 1];
+      }
     }
+
     mount(child, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNode);
   }
 }
@@ -581,7 +588,7 @@ function applyWasabyState(component, pNode?) {
   const controlContainer = (component.control._container && (component.control._container[0] || component.control._container));
   const savedActiveElement = document.activeElement;
   // @ts-ignore
-  const prevControls = goUpByControlTree.default(savedActiveElement);
+  const prevControls = goUpByControlTree.goUpByControlTree(savedActiveElement);
   updateWasabyControl(component, pNode || controlContainer, lifecycle);
   component.environment._restoreFocusState = true;    // если сразу после изменения DOM-дерева фокус слетел в body, пытаемся восстановить фокус на ближайший элемент от
   // предыдущего активного, чтобы сохранить контекст фокуса и дать возможность управлять с клавиатуры
@@ -624,26 +631,22 @@ function applyWasabyState(component, pNode?) {
 export function queueWasabyControlChanges(controlNode, regular?) {
   const queue = controlNode.environment.infernoQueue;
   // @ts-ignore
-  if (regular) {
-    if (queue.indexOf(controlNode) === -1 && queue.unshift(controlNode) === 1) {
-      // @ts-ignore
-      runDelayed.default(() => {
-        rerenderWasaby(queue);
-      });
-    }
-  } else {
-    // @ts-ignore
-    if (queue.indexOf(controlNode) === -1 && queue.push(controlNode) === 1) {
-      // @ts-ignore
-      runDelayed.default(() => {
-        rerenderWasaby(queue);
-      });
+  if (queue.indexOf(controlNode) === -1) {
+    if (regular) {
+      queue.unshift(controlNode);
+    } else {
+      queue.push(controlNode);
     }
   }
+  // @ts-ignore
+  runDelayed.default(() => {
+    queue.sort((a, b) => b.idCount - a.idCount);
+    rerenderWasaby(queue, controlNode.environment);
+  });
 }
-export function rerenderWasaby(queue) {
+export function rerenderWasaby(queue, environment) {
   let component;
-  while ((component = queue.pop()) && Object.keys(component.environment.asyncRenderIds).length === 0) {
+  while (Object.keys(environment.asyncRenderIds).length === 0 && (component = queue.pop())) {
     if (component && component.control && component.control._mounted) {
       applyWasabyState(component, component.parentDOM);
     }
@@ -840,7 +843,11 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
               if (VirtualNode.compound || (VirtualNode.instance.markup && VirtualNode.instance.markup.type !== 'invisible-node')) {
                  VirtualNode = setWasabyControlNodeHooks(VirtualNode.instance, VirtualNode, parentVNode, isRootStart, parentDOM, lifecycle, environment);
                  if (VirtualNode.sibling) {
-                   nextNode = VirtualNode.sibling;
+                   if (VirtualNode.sibling.dom) {
+                     nextNode = VirtualNode.sibling.dom;
+                   } else {
+                     nextNode = VirtualNode.sibling;
+                   }     
                  }
                  lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
                  mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, VirtualNode);
@@ -860,7 +867,7 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                   }
                 }
                 if (environment.infernoQueue && Object.keys(environment.infernoQueue).length !== 0) {
-                  rerenderWasaby(environment.infernoQueue);
+                  rerenderWasaby(environment.infernoQueue, environment);
                 }
               }
            } else {
@@ -927,6 +934,16 @@ export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, life
 // @ts-ignore
 function mountWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
   const yVNode = createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode);
+  let lastChild;
+  if (vNode.sibling) {
+    if (yVNode.markup.length) {
+      lastChild = yVNode.markup[yVNode.markup.length - 1];
+      lastChild.sibling = vNode.sibling;
+    }
+    if (vNode.sibling.dom) {
+      nextNode = vNode.sibling.dom;
+    }
+  }
   mountArrayChildren(yVNode.markup, parentDOM, {}, isSVG, nextNode, lifecycle, environment, parentControlNode);
 }
 

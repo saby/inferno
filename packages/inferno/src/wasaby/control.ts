@@ -195,6 +195,7 @@ function WCN(
       this.internalOptions = internalOptions;
       this.optionsVersions = optionsVersions;
       this.id = control._instId || 0;
+      this.idCount = parseInt(this.id.replace('inst_', ''));
       this.parent = parentNode;
       this.key = key;
       this.defaultOptions = defaultOptions;
