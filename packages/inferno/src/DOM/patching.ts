@@ -36,7 +36,7 @@ function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: O
       replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
     }
   } else {
-    mount(nextVNode, parentDOM, context, isSVG, lastVNode.sibling, lifecycle, false, environment, parentControlNode, parentVNode);
+    mount(nextVNode, parentDOM, context, isSVG, lastVNode.sibling || null, lifecycle, false, environment, parentControlNode, parentVNode);
     removeVNodeDOM(lastVNode, parentDOM);
   }
 }
