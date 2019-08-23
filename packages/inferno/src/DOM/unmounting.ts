@@ -4,6 +4,8 @@ import { VNode } from '../core/types';
 import { delegatedEvents, handleEvent } from './events/delegation';
 import { EMPTY_OBJ, findDOMfromVNode, removeVNodeDOM } from './utils/common';
 import { unmountRef } from '../core/refs';
+// @ts-ignore
+import { OperationType, injectKey, startSync, endSync, startControlCommit, startTemplateCommit, startLifecycle, startLifecycleCallback, endControlLifecycle, endControlLifecycleCallback, endTemplateLifecycle, endTemplateLifecycleCallback, endCommit } from 'Vdom/DevtoolsHook';
 
 function compoundUnmountProcess(controlNode) {
   const control = controlNode.control;
@@ -58,6 +60,7 @@ export function unmount(vNode) {
     }
     unmountRef(ref);
   } else if (flags & VNodeFlags.WasabyControl) {
+    startControlCommit(OperationType.DESTROY, vNode);
     if (!vNode.compound) {
       unmount(vNode.instance.markup);
       if (!vNode.instance.control._destroyed) {
@@ -68,8 +71,15 @@ export function unmount(vNode) {
     } else {
       compoundUnmountProcess(vNode.instance);
     }
+    endCommit(vNode);
+    startLifecycle(vNode);
+    endControlLifecycle(vNode);
   } else if (flags & VNodeFlags.TemplateWasabyNode) {
+    startTemplateCommit(OperationType.DESTROY, vNode);
     unmountAllChildren(vNode.markup);
+    endCommit(vNode);
+    startLifecycle(vNode);
+    endTemplateLifecycle(vNode);
   }
   else if (children) {
     if (flags & VNodeFlags.ComponentClass) {
