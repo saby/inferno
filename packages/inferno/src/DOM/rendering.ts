@@ -6,6 +6,8 @@ import { mount } from './mounting';
 import { patch } from './patching';
 import { remove } from './unmounting';
 import { callAll, options, EMPTY_OBJ } from './utils/common';
+// @ts-ignore
+import { OperationType, injectKey, startSync, endSync, startControlCommit, startTemplateCommit, startLifecycle, startLifecycleCallback, endControlLifecycle, endControlLifecycleCallback, endTemplateLifecycle, endTemplateLifecycleCallback, endCommit } from 'Vdom/DevtoolsHook';
 
 const hasDocumentAvailable: boolean = typeof document !== 'undefined';
 
@@ -40,6 +42,8 @@ export function __render(
   environment?: any,
   parentControlNode?: any
 ): void {
+  startSync(environment._rootId);
+  let devtoolsKey;
   // Development warning
   if (process.env.NODE_ENV !== 'production') {
     if (documentBody === parentDOM) {
@@ -53,6 +57,12 @@ export function __render(
   // @ts-ignore
   lifecycle.mount = [];
   let rootInput = (parentDOM as any).$V as VNode | null;
+  if (isRootStart) {
+    devtoolsKey = startControlCommit(OperationType.CREATE, parentControlNode);
+    parentControlNode.devtoolsKey = devtoolsKey;
+    // @ts-ignore
+    lifecycle.mount.push(startLifecycleCallback(parentControlNode));
+  }
 
   if (isNullOrUndef(rootInput)) {
     if (!isNullOrUndef(input)) {
@@ -75,6 +85,11 @@ export function __render(
       rootInput = (parentDOM as any).$V = input as VNode;
     }
   }
+  if (isRootStart) {
+    endCommit(parentControlNode);
+    // @ts-ignore
+    lifecycle.mount.push(endControlLifecycleCallback(parentControlNode));
+  }
   if (isFunction(callback)) {
     // @ts-ignore
     lifecycle.mount.push(callback)
@@ -93,6 +108,8 @@ export function __render(
   if (isFunction(options.renderComplete)) {
     (options.renderComplete as Function)(rootInput, parentDOM as any);
   }
+
+  endSync(environment._rootId);
 }
 
 export function render(
