@@ -394,7 +394,7 @@ function patchChildren(
 
 // @ts-ignore
 function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, nN, environment, parentControlNode) {
-  let devtoolsKey = startTemplateCommit(OperationType.UPDATE, lastVNode);
+  const devtoolsKey = startTemplateCommit(OperationType.UPDATE, lastVNode);
   injectKey(nextVNode, devtoolsKey);
   lifecycle.mount.push(startLifecycleCallback(nextVNode));
   let changed = EMPTY_OBJ;
@@ -553,7 +553,7 @@ function patchClassComponent(lastVNode, nextVNode, parentDOM, context, isSVG: bo
 // @ts-ignore
 function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode, parentVNode) {
   let changed = EMPTY_OBJ;
-  let devtoolsKey = startControlCommit(OperationType.UPDATE, lastVNode);
+  const devtoolsKey = startControlCommit(OperationType.UPDATE, lastVNode);
   injectKey(nextVNode, devtoolsKey);
   // для не-compound контролов делаем проверку изменения служебных опций
   // @ts-ignore

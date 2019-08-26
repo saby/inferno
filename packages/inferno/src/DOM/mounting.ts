@@ -525,7 +525,7 @@ function getStateReadyOrCall(stateVar, control, vnode, serializer) {
 
 function updateWasabyControl(controlNode, parentDOM, lifecycle) {
   let shouldUp;
-  let devtoolsKey = startControlCommit(OperationType.UPDATE, controlNode);
+  const devtoolsKey = startControlCommit(OperationType.UPDATE, controlNode);
   injectKey(controlNode, devtoolsKey);
 
   try {
@@ -650,8 +650,9 @@ export function queueWasabyControlChanges(controlNode, regular?) {
   }
   // @ts-ignore
   runDelayed.default(() => {
-    queue.sort((a, b) => b.idCount - a.idCount);
-    rerenderWasaby(queue, controlNode.environment);
+    const filteredQueue = [...controlNode.environment.infernoQueue];
+    filteredQueue.sort((a, b) => b.idCount - a.idCount);
+    rerenderWasaby(filteredQueue, controlNode.environment);
   });
 }
 export function rerenderWasaby(queue, environment) {
@@ -661,6 +662,7 @@ export function rerenderWasaby(queue, environment) {
       applyWasabyState(component, component.parentDOM);
     }
   }
+  environment.infernoQueue = [];
 }
 
 export function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRootStart, parentDOM, lifecycle, environment) {
@@ -732,7 +734,7 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
   let setEventFunction;
   let controlNodeEventRef;
   let controlNodeRef;
-  let devtoolsKey = startControlCommit(OperationType.CREATE, vNode);
+  const devtoolsKey = startControlCommit(OperationType.CREATE, vNode);
   if (vNode && !vNode.instance) {
     controlNode = createNode(vNode.controlClass, {
       attributes: vNode.controlAttributes,
@@ -928,7 +930,7 @@ export function getMarkupForTemplatedNode(vNode) {
 
 // @ts-ignore
 export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode) {
-  let devtoolsKey = startTemplateCommit(OperationType.CREATE, vNode);
+  const devtoolsKey = startTemplateCommit(OperationType.CREATE, vNode);
   injectKey(vNode, devtoolsKey);
   vNode.markup = getMarkupForTemplatedNode(vNode);
   // check current context field versions
