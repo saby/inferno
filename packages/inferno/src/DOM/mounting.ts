@@ -10,8 +10,6 @@ import { mountRef } from '../core/refs';
 import { createNode, getDecoratedMarkup, collectObjectVersions } from '../wasaby/control';
 // @ts-ignore
 import { createWriteStream } from 'fs';
-// @ts-ignore
-import { OperationType, injectKey, startSync, endSync, startControlCommit, startTemplateCommit, startLifecycle, startLifecycleCallback, endControlLifecycle, endControlLifecycleCallback, endTemplateLifecycle, endTemplateLifecycleCallback, endCommit } from 'Vdom/DevtoolsHook';
 
 function ifRawMarkupNode(vNode) {
   return vNode && vNode.hasOwnProperty('nodeProperties') && vNode.hasOwnProperty('markup');
@@ -525,9 +523,6 @@ function getStateReadyOrCall(stateVar, control, vnode, serializer) {
 
 function updateWasabyControl(controlNode, parentDOM, lifecycle) {
   let shouldUp;
-  const devtoolsKey = startControlCommit(OperationType.UPDATE, controlNode);
-  injectKey(controlNode, devtoolsKey);
-
   try {
       let resolvedContext;
       //  Logger.log('DirtyChecking (update node with changed)', [
@@ -569,7 +564,6 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
        */
       shouldUp = controlNode.control._shouldUpdate ? controlNode.control._shouldUpdate(controlNode.control._options, controlNode.context) : true;
   }
-  lifecycle.mount.push(startLifecycleCallback(controlNode));
   if (shouldUp) {
       // @ts-ignore
       controlNode.control.saveFullContext(ContextResolver.wrapContext(controlNode.control, controlNode.context || {}));
@@ -581,19 +575,16 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
       lifecycle.mount.push(beforeRenderCallback(controlNode));
       // @ts-ignore
       patch(controlNode.markup, nextInput, parentDOM, {}, false, controlElement, lifecycle, false, controlNode.environment, controlNode);
-      endCommit(controlNode);
       controlNode.markup = nextInput;
       controlNode.fullMarkup = controlNode.markup;
       lifecycle.mount.push(mountWasabyCallback(controlNode));
   }
-  lifecycle.mount.push(endControlLifecycleCallback(controlNode));
 }
 
 function applyWasabyState(component, pNode?) {
   const lifecycle = [];
   // @ts-ignore
   lifecycle.mount = [];
-  startSync(component.environment._rootId);
   const controlContainer = (component.control._container && (component.control._container[0] || component.control._container));
   const savedActiveElement = document.activeElement;
   // @ts-ignore
@@ -635,7 +626,6 @@ function applyWasabyState(component, pNode?) {
       callAll(lifecycle.mount);
     }
   }
-  endSync(component.environment._rootId);
 }
 export function startQueue(queue, environment) {
   const filteredQueue = [...queue];
@@ -740,7 +730,6 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
   let setEventFunction;
   let controlNodeEventRef;
   let controlNodeRef;
-  const devtoolsKey = startControlCommit(OperationType.CREATE, vNode);
   if (vNode && !vNode.instance) {
     controlNode = createNode(vNode.controlClass, {
       attributes: vNode.controlAttributes,
@@ -837,7 +826,6 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
     vNode.instance = controlNode;
     vNode.instance.parentDOM = parentDOM;
   }
-  injectKey(vNode, devtoolsKey);
   return vNode;
 }
 
@@ -853,7 +841,6 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
     VirtualNode.sibling = parentVNode.sibling;
   }
   if (VirtualNode.carrier && VirtualNode.carrier.then) {
-     startSync(environment._rootId);
      if (VirtualNode.instance.control && VirtualNode.instance.control._forceUpdate) {
         environment.asyncRenderIds[VirtualNode.instance.id] = true;
         VirtualNode.instance.control._forceUpdate = function (memo) {
@@ -862,8 +849,6 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
            if (memo === 'mount') {
               delete environment.asyncRenderIds[VirtualNode.instance.id];
               if (VirtualNode.compound || (VirtualNode.instance.markup && VirtualNode.instance.markup.type !== 'invisible-node')) {
-                 startControlCommit(OperationType.CREATE, VirtualNode);
-                 lifecycle.mount.push(startLifecycleCallback(VirtualNode));
                  VirtualNode = setWasabyControlNodeHooks(VirtualNode.instance, VirtualNode, parentVNode, isRootStart, parentDOM, lifecycle, environment);
                  if (VirtualNode.sibling) {
                    if (VirtualNode.sibling.dom) {
@@ -875,8 +860,6 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                  lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
                  mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, VirtualNode);
                  lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
-                 lifecycle.mount.push(endControlLifecycleCallback(VirtualNode));
-                 endCommit(VirtualNode);
               }
               if (Object.keys(environment.asyncRenderIds).length === 0) {
                 if (lifecycle.length > 0) {
@@ -892,7 +875,6 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                   }
                 }
               }
-              endSync(environment._rootId);
               if (environment.infernoQueue && Object.keys(environment.infernoQueue).length !== 0) {
                 startQueue(environment.infernoQueue, environment);
               }
@@ -915,15 +897,12 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
           queueWasabyControlChanges(VirtualNode.instance, true);
         };
      }
-     lifecycle.mount.push(startLifecycleCallback(VirtualNode));
      lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
      if (VirtualNode.compound || isInvisibleNode) {
         mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, vNode);
      }
      lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
-     lifecycle.mount.push(endControlLifecycleCallback(VirtualNode));
   }
-  endCommit(VirtualNode);
 }
 
 export function getMarkupForTemplatedNode(vNode) {
@@ -934,8 +913,6 @@ export function getMarkupForTemplatedNode(vNode) {
 
 // @ts-ignore
 export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode) {
-  const devtoolsKey = startTemplateCommit(OperationType.CREATE, vNode);
-  injectKey(vNode, devtoolsKey);
   vNode.markup = getMarkupForTemplatedNode(vNode);
   // check current context field versions
   vNode.optionsVersions = collectObjectVersions(vNode.controlProperties);
@@ -965,7 +942,6 @@ export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, life
 // @ts-ignore
 function mountWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
   const yVNode = createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode);
-  lifecycle.mount.push(startLifecycleCallback(yVNode));
   let lastChild;
   if (vNode.sibling) {
     if (yVNode.markup.length) {
@@ -977,8 +953,6 @@ function mountWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, i
     }
   }
   mountArrayChildren(yVNode.markup, parentDOM, {}, isSVG, nextNode, lifecycle, environment, parentControlNode);
-  endCommit(yVNode);
-  lifecycle.mount.push(endTemplateLifecycleCallback(yVNode, parentDOM));
 }
 
 export function mountFunctionalComponent(vNode: VNode, parentDOM: Element | null, context: Object, isSVG: boolean, nextNode: Element | null, lifecycle): void {
