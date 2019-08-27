@@ -525,7 +525,7 @@ function getStateReadyOrCall(stateVar, control, vnode, serializer) {
 
 function updateWasabyControl(controlNode, parentDOM, lifecycle) {
   let shouldUp;
-  let devtoolsKey = startControlCommit(OperationType.UPDATE, controlNode);
+  const devtoolsKey = startControlCommit(OperationType.UPDATE, controlNode);
   injectKey(controlNode, devtoolsKey);
 
   try {
@@ -637,6 +637,11 @@ function applyWasabyState(component, pNode?) {
   }
   endSync(component.environment._rootId);
 }
+export function startQueue(queue, environment) {
+  const filteredQueue = [...queue];
+  filteredQueue.sort((a, b) => b.idCount - a.idCount);
+  rerenderWasaby(filteredQueue, environment);
+}
 // @ts-ignore
 export function queueWasabyControlChanges(controlNode, regular?) {
   const queue = controlNode.environment.infernoQueue;
@@ -650,13 +655,16 @@ export function queueWasabyControlChanges(controlNode, regular?) {
   }
   // @ts-ignore
   runDelayed.default(() => {
-    queue.sort((a, b) => b.idCount - a.idCount);
-    rerenderWasaby(queue, controlNode.environment);
+    startQueue(controlNode.environment.infernoQueue, controlNode.environment);
   });
 }
 export function rerenderWasaby(queue, environment) {
   let component;
   while (Object.keys(environment.asyncRenderIds).length === 0 && (component = queue.pop())) {
+    const componentIndex = environment.infernoQueue.indexOf(component);
+    if (componentIndex !== -1) {
+      environment.infernoQueue.splice(componentIndex, 1);
+    }
     if (component && component.control && component.control._mounted) {
       applyWasabyState(component, component.parentDOM);
     }
@@ -732,7 +740,7 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
   let setEventFunction;
   let controlNodeEventRef;
   let controlNodeRef;
-  let devtoolsKey = startControlCommit(OperationType.CREATE, vNode);
+  const devtoolsKey = startControlCommit(OperationType.CREATE, vNode);
   if (vNode && !vNode.instance) {
     controlNode = createNode(vNode.controlClass, {
       attributes: vNode.controlAttributes,
@@ -885,10 +893,8 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                 }
               }
               endSync(environment._rootId);
-              if (Object.keys(environment.asyncRenderIds).length === 0) {
-                if (environment.infernoQueue && Object.keys(environment.infernoQueue).length !== 0) {
-                  rerenderWasaby(environment.infernoQueue, environment);
-                }
+              if (environment.infernoQueue && Object.keys(environment.infernoQueue).length !== 0) {
+                startQueue(environment.infernoQueue, environment);
               }
            } else {
              queueWasabyControlChanges(VirtualNode.instance, true);
@@ -928,7 +934,7 @@ export function getMarkupForTemplatedNode(vNode) {
 
 // @ts-ignore
 export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode) {
-  let devtoolsKey = startTemplateCommit(OperationType.CREATE, vNode);
+  const devtoolsKey = startTemplateCommit(OperationType.CREATE, vNode);
   injectKey(vNode, devtoolsKey);
   vNode.markup = getMarkupForTemplatedNode(vNode);
   // check current context field versions

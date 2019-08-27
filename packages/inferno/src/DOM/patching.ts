@@ -2,7 +2,7 @@ import { combineFrom, isFunction, isInvalid, isNull, isNullOrUndef, unescape } f
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { directClone } from '../core/implementation';
 import { VNode } from '../core/types';
-import { mount, mountArrayChildren, mountTextContent, mountWasabyCallback, getMarkupForTemplatedNode, rerenderWasaby, beforeRenderCallback, appendForFocuses } from './mounting';
+import { mount, mountArrayChildren, mountTextContent, mountWasabyCallback, getMarkupForTemplatedNode, beforeRenderCallback, appendForFocuses, startQueue } from './mounting';
 import { clearDOM, remove, removeAllChildren, unmount, unmountAllChildren } from './unmounting';
 import { appendChild, createDerivedState, EMPTY_OBJ, findDOMfromVNode, moveVNodeDOM, options, removeChild, removeVNodeDOM, replaceChild } from './utils/common';
 import { isControlledFormElement, processElement } from './wrappers/processElement';
@@ -394,7 +394,7 @@ function patchChildren(
 
 // @ts-ignore
 function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, nN, environment, parentControlNode) {
-  let devtoolsKey = startTemplateCommit(OperationType.UPDATE, lastVNode);
+  const devtoolsKey = startTemplateCommit(OperationType.UPDATE, lastVNode);
   injectKey(nextVNode, devtoolsKey);
   lifecycle.mount.push(startLifecycleCallback(nextVNode));
   let changed = EMPTY_OBJ;
@@ -553,7 +553,7 @@ function patchClassComponent(lastVNode, nextVNode, parentDOM, context, isSVG: bo
 // @ts-ignore
 function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode, parentVNode) {
   let changed = EMPTY_OBJ;
-  let devtoolsKey = startControlCommit(OperationType.UPDATE, lastVNode);
+  const devtoolsKey = startControlCommit(OperationType.UPDATE, lastVNode);
   injectKey(nextVNode, devtoolsKey);
   // для не-compound контролов делаем проверку изменения служебных опций
   // @ts-ignore
@@ -686,9 +686,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
         }
       }
       endSync(environment._rootId);
-      if (Object.keys(nextVNode.instance.environment.asyncRenderIds).length === 0) {
-        rerenderWasaby(nextVNode.instance.environment.infernoQueue, nextVNode.instance.environment)
-      }
+      startQueue(nextVNode.environment.infernoQueue, nextVNode.environment);
     });
   } else {
     lifecycle.mount.push(startLifecycleCallback(childControlNode));
