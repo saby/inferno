@@ -896,11 +896,6 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
               if (environment.infernoQueue && Object.keys(environment.infernoQueue).length !== 0) {
                 startQueue(environment.infernoQueue, environment);
               }
-              if (Object.keys(environment.asyncRenderIds).length === 0) {
-                if (environment.infernoQueue && Object.keys(environment.infernoQueue).length !== 0) {
-                  rerenderWasaby(environment.infernoQueue, environment);
-                }
-              }
            } else {
              queueWasabyControlChanges(VirtualNode.instance, true);
            }
