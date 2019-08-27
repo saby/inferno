@@ -637,6 +637,11 @@ function applyWasabyState(component, pNode?) {
   }
   endSync(component.environment._rootId);
 }
+export function startQueue(queue, environment) {
+  const filteredQueue = [...queue];
+  filteredQueue.sort((a, b) => b.idCount - a.idCount);
+  rerenderWasaby(filteredQueue, environment);
+}
 // @ts-ignore
 export function queueWasabyControlChanges(controlNode, regular?) {
   const queue = controlNode.environment.infernoQueue;
@@ -650,14 +655,16 @@ export function queueWasabyControlChanges(controlNode, regular?) {
   }
   // @ts-ignore
   runDelayed.default(() => {
-    const filteredQueue = [...controlNode.environment.infernoQueue];
-    filteredQueue.sort((a, b) => b.idCount - a.idCount);
-    rerenderWasaby(filteredQueue, controlNode.environment);
+    startQueue(controlNode.environment.infernoQueue, controlNode.environment);
   });
 }
 export function rerenderWasaby(queue, environment) {
   let component;
   while (Object.keys(environment.asyncRenderIds).length === 0 && (component = queue.pop())) {
+    const componentIndex = environment.infernoQueue.indexOf(component);
+    if (componentIndex !== -1) {
+      environment.infernoQueue.splice(componentIndex, 1);
+    }
     if (component && component.control && component.control._mounted) {
       applyWasabyState(component, component.parentDOM);
     }
@@ -887,6 +894,9 @@ export function mountWasabyControl(vNode: any, parentDOM: Element | null, isSVG:
                 }
               }
               endSync(environment._rootId);
+              if (environment.infernoQueue && Object.keys(environment.infernoQueue).length !== 0) {
+                startQueue(environment.infernoQueue, environment);
+              }
               if (Object.keys(environment.asyncRenderIds).length === 0) {
                 if (environment.infernoQueue && Object.keys(environment.infernoQueue).length !== 0) {
                   rerenderWasaby(environment.infernoQueue, environment);
