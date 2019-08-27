@@ -407,9 +407,20 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
   let nextInput;
   nextVNode.childFlags = nextVNode.markup && nextVNode.markup.length ? nextVNode.key ? 8 : 4 : 0;
   if (!nextVNode.hasOwnProperty('sibling')) {
-    if (lastVNode.sibling && lastVNode.sibling.dom && document.contains(lastVNode.sibling.dom)) {
-       nextVNode.sibling = lastVNode.sibling;
-    }
+    if (lastVNode.sibling && lastVNode.sibling.dom) {
+      let docContains = false;
+      // @ts-ignore
+      if (Env.detection.isIE) {
+          // IE document api does not treat document as any HTML NODE Element, so we have to 
+          // take that method call to body
+          docContains = document.body.contains(lastVNode.sibling.dom);
+      } else {
+          docContains = document.contains(lastVNode.sibling.dom);
+      }
+      if (docContains) {
+          nextVNode.sibling = lastVNode.sibling;
+      }
+  }
   }
    if (changedOptions || changedAttrs || changedTemplate) {
    //    Logger.log('DirtyChecking (update template with changed options)', ['', '', changedOptions]);
