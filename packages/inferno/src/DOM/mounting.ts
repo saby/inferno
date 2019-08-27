@@ -669,7 +669,6 @@ export function rerenderWasaby(queue, environment) {
       applyWasabyState(component, component.parentDOM);
     }
   }
-  environment.infernoQueue = [];
 }
 
 export function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRootStart, parentDOM, lifecycle, environment) {
