@@ -1,6 +1,8 @@
 import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning, unescape } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, _SWCNH, beforeRenderCallback, appendForFocuses} from 'inferno';
+// @ts-ignore
+import { OperationType, injectKey, startSync, endSync, startControlCommit, startTemplateCommit, startLifecycle, startLifecycleCallback, endControlLifecycle, endControlLifecycleCallback, endTemplateLifecycle, endTemplateLifecycleCallback, endCommit } from 'Vdom/DevtoolsHook';
 
 function checkIfHydrationNeeded(sibling: Node | Element | null): boolean {
   // @ts-ignore
@@ -72,6 +74,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
     currentNode = currentDom;
   }
   if (yVNode.carrier && yVNode.carrier.then) {
+      startSync(environment._rootId);
       if (yVNode.instance.control && yVNode.instance.control._forceUpdate) {
          environment.asyncRenderIds[yVNode.instance.id] = true;
          yVNode.instance.control._forceUpdate = function (memo) {
@@ -79,10 +82,12 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
               // @ts-ignore
 //               lifecycle.mount = [];
               if (memo === 'hydrate') {
+                  lifecycle.mount.push(startLifecycleCallback(yVNode));
                   delete environment.asyncRenderIds[yVNode.instance.id];
                   yVNode = _SWCNH(yVNode.instance, yVNode, parentVNode, false, parentDOM, lifecycle, environment);
                   lifecycle.mount.push(beforeRenderCallback(yVNode.instance));
                   hydrateVNode(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, vNode);
+                  lifecycle.mount.push(endControlLifecycleCallback(yVNode));
                   // @ts-ignore
                   // lifecycle.mount.push(inferno._MWWC(yVNode.instance));
                   if (Object.keys(environment.asyncRenderIds).length === 0) {
@@ -101,6 +106,7 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                         }
                      }
                   }
+                  endSync(environment._rootId);
               } else {
                 _queueWasabyControlChanges(yVNode.instance);
               }
@@ -129,20 +135,26 @@ function hydrateWasabyControl(vNode, parentDOM, currentDom, context, isSVG, life
                }
           };
       }
+      lifecycle.mount.push(startLifecycleCallback(yVNode));
       lifecycle.mount.push(beforeRenderCallback(yVNode.instance));
       currentNode = hydrateVNode(input, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, yVNode.instance, vNode);
       lifecycle.mount.push(_MWWC(yVNode.instance));
+      lifecycle.mount.push(endControlLifecycleCallback(yVNode));
   }
+  endCommit(yVNode);
   return currentNode;
 }
 
 // @ts-ignore
 function hydrateTemplateWasabyNode(vNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, parentVNode?) {
   const yVNode = _CWTN(vNode, parentDOM, isSVG, vNode.sibling, lifecycle, isRootStart, environment, parentControlNode);
+  lifecycle.mount.push(startLifecycleCallback(yVNode));
   yVNode.children = yVNode.markup;
   yVNode.childFlags = 12;
   yVNode.sibling = vNode.sibling;
   hydrateChildren(yVNode, parentDOM, currentDom, context, isSVG, lifecycle, environment, parentControlNode);
+  endCommit(yVNode);
+  lifecycle.mount.push(endTemplateLifecycleCallback(yVNode, currentDom));
   return findLastDOMFromVNode(yVNode.markup[yVNode.markup.length - 1]);
 }
 
@@ -467,7 +479,10 @@ function hydrateVNode(vNode: VNode, parentDOM: Element, currentDom: Element, con
 
 export function hydrate(input, parentDOM: Element, callback?: Function, isRootStart?: boolean, environment?, parentControlNode?) {
   let dom = isRootStart ? parentDOM : parentDOM.firstChild as Element;
+  let devtoolsKey;
   const lifecycle: Function[] = [];
+
+  startSync(environment._rootId);
 
   if (isNull(dom)) {
     if (process.env.NODE_ENV !== 'production') {
@@ -477,6 +492,13 @@ export function hydrate(input, parentDOM: Element, callback?: Function, isRootSt
   } else {
     // @ts-ignore
     lifecycle.mount = [];
+
+    if (isRootStart) {
+      devtoolsKey = startControlCommit(OperationType.CREATE, parentControlNode);
+      // @ts-ignore
+      lifecycle.mount.push(startLifecycleCallback(parentControlNode));
+      parentControlNode.devtoolsKey = devtoolsKey;
+    }
 
     if (!isInvalid(input)) {
       dom = hydrateVNode(input, parentDOM, dom, {}, false, lifecycle, isRootStart, environment, parentControlNode) as Element;
@@ -489,7 +511,14 @@ export function hydrate(input, parentDOM: Element, callback?: Function, isRootSt
         }
       }
     }
+
+    if (isRootStart) {
+      endCommit(parentControlNode);
+      // @ts-ignore
+      lifecycle.mount.push(endControlLifecycleCallback(parentControlNode));
+    }
   }
+
   if (isFunction(callback)) {
     // @ts-ignore
     lifecycle.mount.push(callback);
@@ -507,12 +536,13 @@ export function hydrate(input, parentDOM: Element, callback?: Function, isRootSt
     }
     // @ts-ignore
     if (lifecycle.mount.length > 0) {
-      let listener$1;
+      let listener;
       // @ts-ignore
-      while ((listener$1 = lifecycle.mount.shift()) !== undefined) {
-        listener$1();
+      while ((listener = lifecycle.mount.shift()) !== undefined) {
+        listener();
       }
     }
   }
   (parentDOM as any).$V = input;
+  endSync(environment._rootId);
 }

@@ -10,7 +10,9 @@ import { patchProp } from './props';
 import { handleComponentInput, renderNewInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
 import { mountRef, unmountRef } from '../core/refs';
-import { getDecoratedMarkup, collectObjectVersions } from '../wasaby/control'
+import { getDecoratedMarkup, collectObjectVersions } from '../wasaby/control';
+// @ts-ignore
+import { OperationType, injectKey, startSync, endSync, startControlCommit, startTemplateCommit, startLifecycle, startLifecycleCallback, endControlLifecycle, endControlLifecycleCallback, endTemplateLifecycle, endTemplateLifecycleCallback, endCommit } from 'Vdom/DevtoolsHook';
 
 
 function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], isRootStart?: boolean, environment?: any, parentControlNode?: any, parentVNode?: any) {
@@ -392,6 +394,10 @@ function patchChildren(
 
 // @ts-ignore
 function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, nN, environment, parentControlNode) {
+  const devtoolsKey = startTemplateCommit(OperationType.UPDATE, lastVNode);
+  injectKey(nextVNode, devtoolsKey);
+  lifecycle.mount.push(startLifecycleCallback(nextVNode));
+  let changed = EMPTY_OBJ;
   let nextNode = nN || null;
   // @ts-ignore
   nextVNode.optionsVersions = collectObjectVersions(nextVNode.controlProperties);    // check current context field versions
@@ -449,9 +455,12 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
       }
      patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, nextNode || lastVNode.sibling || null, lastVNode, lifecycle, environment, parentControlNode);
       nextVNode.markup = nextInput;
+      changed = { options: changedOptions, attributes: changedAttrs };
    } else {
       nextVNode.markup = lastVNode.markup;
    }
+   endCommit(nextVNode);
+   lifecycle.mount.push(endTemplateLifecycleCallback(nextVNode, parentDOM, changed, lastVNode));
 }
 
 function createDidUpdate(instance, lastProps, lastState, snapshot, lifecycle) {
@@ -554,6 +563,9 @@ function patchClassComponent(lastVNode, nextVNode, parentDOM, context, isSVG: bo
 
 // @ts-ignore
 function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode, parentVNode) {
+  let changed = EMPTY_OBJ;
+  const devtoolsKey = startControlCommit(OperationType.UPDATE, lastVNode);
+  injectKey(nextVNode, devtoolsKey);
   // для не-compound контролов делаем проверку изменения служебных опций
   // @ts-ignore
   const changedInternalOptions = DC.getChangedOptions(nextVNode.controlInternalProperties, lastVNode.internalOptions);
@@ -592,7 +604,9 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
              Compatible.createCombinedOptions(nextVNode.controlProperties, nextVNode.controlInternalProperties)
              : nextVNode.controlProperties;
   if (lastVNode.carrier) {
+    startSync(environment._rootId);
     lastVNode.carrier.then(function () {
+      lifecycle.mount.push(startLifecycleCallback(childControlNode));
       // Атрибуты тоже учавствуют в DirtyChecking
       if (changedOptions || changedInternalOptions || changedAttrs || changedContext) {
         if (!nextVNode.compound) {
@@ -662,6 +676,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
           nextVNode.instance.markup.ref = controlNodeEventRef[4];
           lifecycle.mount.push(beforeRenderCallback(childControlNode));
           patch(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextInput.dom, lifecycle, false, environment, nextVNode.instance, nextInput);
+          endCommit(childControlNode);
           nextVNode.instance.markup = nextInput;
           lifecycle.mount.push(mountWasabyCallback(childControlNode));
         } else {
@@ -671,17 +686,21 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
           }
           nextVNode.instance = childControlNode;
         }
+        changed = { context: changedContext, options: changedOptions, attributes: changedAttrs };
       } else {
           nextVNode.instance = lastVNode.instance;
       }
+      lifecycle.mount.push(endControlLifecycleCallback(nextVNode, changed, lastVNode));
       if (lastVNode.instance.markup && lastVNode.instance.markup.type === 'invisible-node') {
         if (lastVNode.ref) {
           parentVNode.ref = lastVNode.ref;
         }
       }
+      endSync(environment._rootId);
       startQueue(nextVNode.environment.infernoQueue, nextVNode.environment);
     });
   } else {
+    lifecycle.mount.push(startLifecycleCallback(childControlNode));
     if (changedOptions || changedInternalOptions || changedAttrs || changedContext) {
       if (!nextVNode.compound) {
         try {
@@ -759,6 +778,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
         }
         nextVNode.instance = childControlNode;
       }
+      changed = { context: changedContext, options: changedOptions, attributes: changedAttrs };
     } else {
         nextVNode.instance = lastVNode.instance;
     }
@@ -767,6 +787,8 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
         parentVNode.ref = lastVNode.ref;
       }
     }
+    endCommit(childControlNode);
+    lifecycle.mount.push(endControlLifecycleCallback(nextVNode, changed, lastVNode));
   }
 }
 
