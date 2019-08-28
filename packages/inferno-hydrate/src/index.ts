@@ -1,6 +1,6 @@
 import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning, unescape } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
-import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, _SWCNH, beforeRenderCallback, appendForFocuses} from 'inferno';
+import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, _SWCNH, beforeRenderCallback, appendForFocuses, _MHTML} from 'inferno';
 // @ts-ignore
 import { OperationType, injectKey, startSync, endSync, startControlCommit, startTemplateCommit, startLifecycle, startLifecycleCallback, endControlLifecycle, endControlLifecycleCallback, endTemplateLifecycle, endTemplateLifecycleCallback, endCommit } from 'Vdom/DevtoolsHook';
 
@@ -434,11 +434,14 @@ function hydrateFragment(vNode: VNode, parentDOM: Element, dom: Element, context
   return findLastDOMFromVNode((children as VNode[])[(children as VNode[]).length - 1]) as Element;
 }
 
-function hydrateHTML(vNode: VNode, dom: Element) {
+function hydrateHTML(vNode, dom, parentDOM) {
+  let newDom = dom;
   if (dom.outerHTML !== vNode.markup) {
-    dom.outerHTML = vNode.markup;
+      newDom = _MHTML(vNode, parentDOM, dom);
+      parentDOM.removeChild(dom);
   }
-  return dom;
+  vNode.dom = newDom;
+  return newDom;
 }
 
 function hydrateVNode(vNode: VNode, parentDOM: Element, currentDom: Element, context: Object, isSVG: boolean, lifecycle: Function[], isRootStart?: boolean, environment?, parentControlNode?, parentVNode?): Element | null {
@@ -449,7 +452,7 @@ function hydrateVNode(vNode: VNode, parentDOM: Element, currentDom: Element, con
   }
   // @ts-ignore
   if (vNode instanceof RawMarkupNode) {
-    return hydrateHTML(vNode, currentDom);
+    return hydrateHTML(vNode, currentDom, parentDOM);
   }
   if (flags & VNodeFlags.Element) {
     return hydrateElement(vNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart, environment, parentControlNode);
@@ -521,7 +524,7 @@ export function hydrate(input, parentDOM: Element, callback?: Function, isRootSt
 
   if (isFunction(callback)) {
     // @ts-ignore
-    lifecycle.mount.push(callback);
+    lifecycle.mount.unshift(callback);
   }
   // We have to wait for any async controls that's in hydration stage till we can call mount callbacks
   // @ts-ignore
