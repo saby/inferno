@@ -29,7 +29,8 @@ import {
   queueWasabyControlChanges,
   setWasabyControlNodeHooks,
   beforeRenderCallback,
-  appendForFocuses
+  appendForFocuses,
+  mountHTML
 } from './DOM/mounting';
 import { createRef, forwardRef, mountRef } from './core/refs';
 import { nextTickWasaby } from './wasaby/control';
@@ -85,6 +86,7 @@ export {
   mountRef as _MR,
   mountText as _MT,
   mountProps as _MP,
+  mountHTML as _MHTML,
   __render,
   patchStyle as _PS,
   createWasabyControlInstance as _CWCI,

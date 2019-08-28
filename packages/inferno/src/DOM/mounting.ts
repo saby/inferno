@@ -367,7 +367,11 @@ function compoundMountProcess(controlNode) {
   options.element = element;
   options.hasMarkup = true;
   options.parent = null;
-  controlNode.control = new controlNode.controlClass(options);
+  if (element.wsControl) {
+    controlNode.control = element.wsControl;
+  } else {
+    controlNode.control = new controlNode.controlClass(options);
+  }
 
   const control = controlNode.control;
 
@@ -378,6 +382,9 @@ function compoundMountProcess(controlNode) {
       if (logicParent._nativeElements) {
           logicParent._nativeElements[name] = element;
       }
+  }
+  if (control.reviveSuperOldControls) {
+    control.reviveSuperOldControls();
   }
 }
 
@@ -399,7 +406,10 @@ export function beforeRenderCallback(controlNode) {
 export function mountWasabyCallback(controlNode) {
   return function () {
       if (controlNode.compound) {
-        compoundMountProcess(controlNode);
+        // @ts-ignore
+        runDelayed.default(function () {
+          compoundMountProcess(controlNode);
+        });
       } else {
         // _reactiveStart means starting of monitor change in properties
         controlNode.control._reactiveStart = true;
