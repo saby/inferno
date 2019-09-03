@@ -10,6 +10,14 @@ import { mountRef } from '../core/refs';
 import { createNode, getDecoratedMarkup, collectObjectVersions } from '../wasaby/control';
 // @ts-ignore
 import { createWriteStream } from 'fs';
+// @ts-ignore
+import { RawMarkupNode, ContextResolver } from 'View/Executor/ExpressionsLib';
+// @ts-ignore
+import { Hooks, runDelayedRebuild } from 'Vdom/VdomLib';
+// @ts-ignore
+import { OptionsResolver } from 'View/Executor/Utils/ViewUtilsLib';
+// @ts-ignore
+import { goUpByControlTree, focus } from 'UI/FocusLib';
 
 function ifRawMarkupNode(vNode) {
   return vNode && vNode.hasOwnProperty('nodeProperties') && vNode.hasOwnProperty('markup');
@@ -30,7 +38,6 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
     mountFragment(vNode, parentDOM, context, isSVG, nextNode, lifecycle);
   } else if (flags & VNodeFlags.Portal) {
     mountPortal(vNode, context, parentDOM, nextNode, lifecycle);
-    // @ts-ignore
   } else if (vNode instanceof RawMarkupNode || ifRawMarkupNode(vNode)) {
     return mountHTML(vNode, parentDOM, nextNode);
   } else if (flags & VNodeFlags.WasabyControl || flags === 147456) {
@@ -170,7 +177,7 @@ function appendFocusesElements(self, vnode) {
               class: 'vdom-focus-out',
               tabindex: '0'
           }, 'vdom-focus-out', hookOut);
-      // @ts-ignore       
+      // @ts-ignore
       vnode.children = [].concat(focusInNode, vnode.children, focusOutNode);
       return {in: focusInNode, out: focusOutNode};
   }
@@ -271,7 +278,6 @@ export function mountElement(vNode: VNode, parentDOM: Element | null, context: O
   }
 
   if (vNode.hprops && vNode.hprops.events && Object.keys(vNode.hprops.events).length > 0) {
-    // @ts-ignore
     const setEventFunction = Hooks.setEventHooks(environment);
     const templateNodeEventRef = setEventFunction(vNode.type, vNode.hprops, vNode.children, vNode.key, parentControlNode, vNode.ref)
     vNode.ref = templateNodeEventRef[4];
@@ -403,8 +409,7 @@ export function mountWasabyCallback(controlNode) {
         controlNode.control._reactiveStart = true;
         if (!controlNode.control._mounted && !controlNode.control._unmounted) {
             if (controlNode.hasCompound) {
-                // @ts-ignore
-                runDelayed.default(function () {
+                runDelayedRebuild(function () {
                     afterMountProcess(controlNode);
                 });
             } else {
@@ -461,7 +466,6 @@ function findTopConfig(configId) {
 }
 function fillCtx(control, vnode, resolvedCtx) {
   control._saveContextObject(resolvedCtx);
-  // @ts-ignore
   control.saveFullContext(ContextResolver.wrapContext(control, vnode.context || {}));
 }
 
@@ -490,7 +494,6 @@ function getStateReadyOrCall(stateVar, control, vnode, serializer) {
           window["inline" + stateVar] = undefined;
       }
   }
-  // @ts-ignore
   const ctx = ContextResolver.resolveContext(control.constructor, vnode.context || {}, control);
   let res;
   try {
@@ -512,7 +515,6 @@ function getStateReadyOrCall(stateVar, control, vnode, serializer) {
   if (!vnode.inheritOptions) {
       vnode.inheritOptions = {};
   }
-  // @ts-ignore
   OptionsResolver.resolveInheritOptions(vnode.controlClass, vnode, vnode.controlProperties);
   control.saveInheritOptions(vnode.inheritOptions);
   if (srec && srec.unregister) {
@@ -531,10 +533,8 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
       //      changedOptions || changedInternalOptions || changedAttrs || changedContext
       //  ]);
       controlNode.environment.setRebuildIgnoreId(controlNode.id);
-      // @ts-ignore
       OptionsResolver.resolveInheritOptions(controlNode.controlClass, controlNode, controlNode.options);
       controlNode.control.saveInheritOptions(controlNode.inheritOptions);
-      // @ts-ignore
       resolvedContext = ContextResolver.resolveContext(controlNode.controlClass, controlNode.context, controlNode.control);
       // Forbid force update in the time between _beforeUpdate and _afterUpdate
 
@@ -555,7 +555,6 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
       // controlNode.attributes = nextVNode.controlAttributes;
       // controlNode.events = nextVNode.controlEvents;
       controlNode.control._saveContextObject(resolvedContext);
-      // @ts-ignore
       controlNode.control.saveFullContext(ContextResolver.wrapContext(controlNode.control, controlNode.control._context));
   }
   finally {
@@ -565,7 +564,6 @@ function updateWasabyControl(controlNode, parentDOM, lifecycle) {
       shouldUp = controlNode.control._shouldUpdate ? controlNode.control._shouldUpdate(controlNode.control._options, controlNode.context) : true;
   }
   if (shouldUp) {
-      // @ts-ignore
       controlNode.control.saveFullContext(ContextResolver.wrapContext(controlNode.control, controlNode.context || {}));
       // @ts-ignore
       const nextInput = getDecoratedMarkup(controlNode, false);
@@ -587,8 +585,7 @@ function applyWasabyState(component, pNode?) {
   lifecycle.mount = [];
   const controlContainer = (component.control._container && (component.control._container[0] || component.control._container));
   const savedActiveElement = document.activeElement;
-  // @ts-ignore
-  const prevControls = goUpByControlTree.goUpByControlTree(savedActiveElement);
+  const prevControls = goUpByControlTree(savedActiveElement);
   updateWasabyControl(component, pNode || controlContainer, lifecycle);
   component.environment._restoreFocusState = true;    // если сразу после изменения DOM-дерева фокус слетел в body, пытаемся восстановить фокус на ближайший элемент от
   // предыдущего активного, чтобы сохранить контекст фокуса и дать возможность управлять с клавиатуры
@@ -598,7 +595,7 @@ function applyWasabyState(component, pNode?) {
       prevControls.find(function (control) {
           const container = control._container[0] ? control._container[0] : control._container;
           // @ts-ignore
-          return isElementVisible(control._container) && Focus.focus(container);
+          return isElementVisible(control._container) && focus(container);
       });
   }
   component.environment._restoreFocusState = false;    // для совместимости, фокус устанавливаелся через старый механизм setActive, нужно восстановить фокус после _rebuild
@@ -643,8 +640,7 @@ export function queueWasabyControlChanges(controlNode, regular?) {
       queue.push(controlNode);
     }
   }
-  // @ts-ignore
-  runDelayed.default(() => {
+  runDelayedRebuild(() => {
     startQueue(controlNode.environment.infernoQueue, controlNode.environment);
   });
 }
@@ -669,7 +665,6 @@ export function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRoo
  // @ts-ignore
  controlNode.markup = getDecoratedMarkup(controlNode, isRootStart);
  if (controlNode.markup && controlNode.markup.type && controlNode.markup.type === 'invisible-node') {
-    // @ts-ignore
     setHookFunction = Hooks.setControlNodeHook(controlNode);
     if (controlNode.markup.ref && parentVNode.ref) {
        const cnmRef = controlNode.markup.ref;
@@ -681,7 +676,6 @@ export function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRoo
     }
     controlNodeRef = setHookFunction(controlNode.markup.type, controlNode.markup.props, controlNode.markup.children, controlNode.key, controlNode, parentVNode.ref || controlNode.markup.ref);
     parentVNode.ref = controlNodeRef[4];
-    // @ts-ignore
     setEventFunction = Hooks.setEventHooks(environment);
     controlNodeEventRef = setEventFunction(controlNode.markup.type, {
        attributes: vNode.controlAttributes,
@@ -695,7 +689,6 @@ export function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRoo
     mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
  }
  else {
-    // @ts-ignore
     setHookFunction = Hooks.setControlNodeHook(controlNode);
     if (controlNode.markup.ref && vNode.ref) {
        const cnmRef = controlNode.markup.ref;
@@ -706,7 +699,6 @@ export function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRoo
     }
     controlNodeRef = setHookFunction(controlNode.markup.type, controlNode.markup.props, controlNode.markup.children, controlNode.key, controlNode, controlNode.markup.ref || vNode.ref);
     controlNode.markup.ref = controlNodeRef[4];
-    // @ts-ignore
     setEventFunction = Hooks.setEventHooks(environment);
     controlNodeEventRef = setEventFunction(controlNode.markup.type, {
        attributes: vNode.controlAttributes,
@@ -772,11 +764,9 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
     //   mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
     // }
   } else if (!controlNode.compound) {
-    // @ts-ignore
     controlNode.control.saveFullContext(ContextResolver.wrapContext(controlNode.control, controlNode.context || {}));
     controlNode.markup = getDecoratedMarkup(controlNode, isRootStart);
     if (controlNode.markup && controlNode.markup.type && controlNode.markup.type === 'invisible-node') {
-      // @ts-ignore
       setHookFunction = Hooks.setControlNodeHook(controlNode);
       if (controlNode.markup.ref && parentVNode.ref) {
           const cnmRef = controlNode.markup.ref;
@@ -788,7 +778,6 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
       }
       controlNodeRef = setHookFunction(controlNode.markup.type, controlNode.markup.props, controlNode.markup.children, controlNode.key, controlNode, parentVNode.ref || controlNode.markup.ref);
       parentVNode.ref = controlNodeRef[4];
-      // @ts-ignore
       setEventFunction = Hooks.setEventHooks(environment);
       controlNodeEventRef = setEventFunction(controlNode.markup.type, {
           attributes: vNode.controlAttributes,
@@ -801,7 +790,6 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
       vNode.ref = parentVNode.ref;
       mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
     } else {
-      // @ts-ignore
       setHookFunction = Hooks.setControlNodeHook(controlNode);
       if (controlNode.markup.ref && vNode.ref) {
           const cnmRef = controlNode.markup.ref;
@@ -812,7 +800,6 @@ export function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, l
       }
       controlNodeRef = setHookFunction(controlNode.markup.type, controlNode.markup.props, controlNode.markup.children, controlNode.key, controlNode, controlNode.markup.ref || vNode.ref);
       controlNode.markup.ref = controlNodeRef[4];
-      // @ts-ignore
       setEventFunction = Hooks.setEventHooks(environment);
       controlNodeEventRef = setEventFunction(controlNode.markup.type, {
           attributes: vNode.controlAttributes,
@@ -929,7 +916,6 @@ export function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, life
         }
       }
       if (node.hprops) {
-          // @ts-ignore
           const setEventFunction = Hooks.setEventHooks(environment);
           const templateNodeEventRef = setEventFunction(node.type, node.hprops, node.children, node.key, parentControlNode, node.ref);
           node.ref = templateNodeEventRef[4];
