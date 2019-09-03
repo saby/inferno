@@ -3,6 +3,10 @@ import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, _SWCNH, beforeRenderCallback, appendForFocuses, _MHTML} from 'inferno';
 // @ts-ignore
 import { OperationType, injectKey, startSync, endSync, startControlCommit, startTemplateCommit, startLifecycle, startLifecycleCallback, endControlLifecycle, endControlLifecycleCallback, endTemplateLifecycle, endTemplateLifecycleCallback, endCommit } from 'Vdom/DevtoolsHook';
+// @ts-ignore
+import { RawMarkupNode } from 'View/Executor/ExpressionsLib';
+// @ts-ignore
+import { Hooks } from 'Vdom/VdomLib';
 
 function checkIfHydrationNeeded(sibling: Node | Element | null): boolean {
   // @ts-ignore
@@ -342,7 +346,6 @@ function hydrateElement(vNode: VNode, parentDOM: Element, dom: Element, context:
 
   isSVG = isSVG || (flags & VNodeFlags.SvgElement) > 0;
   if (vNode.hprops && vNode.hprops.events && Object.keys(vNode.hprops.events).length > 0) {
-    // @ts-ignore
     const setEventFunction = Hooks.setEventHooks(environment);
     const templateNodeEventRef = setEventFunction(vNode.type, vNode.hprops, vNode.children, vNode.key, parentControlNode, vNode.ref);
     vNode.ref = templateNodeEventRef[4];
@@ -450,7 +453,6 @@ function hydrateVNode(vNode: VNode, parentDOM: Element, currentDom: Element, con
   if (flags & VNodeFlags.Component) {
     return hydrateComponent(vNode, parentDOM, currentDom, context, isSVG, (flags & VNodeFlags.ComponentClass) > 0, lifecycle);
   }
-  // @ts-ignore
   if (vNode instanceof RawMarkupNode) {
     return hydrateHTML(vNode, currentDom, parentDOM);
   }

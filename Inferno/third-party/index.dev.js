@@ -1,13 +1,29 @@
-define('Inferno/third-party/index.dev', ['View/Executor/Expressions', 'Core/helpers/String/unEscapeASCII','Core/detection','Core/IoC'], function (Expressions, unEscapeASCII, detection, IoC) {var exports = {}, RawMarkupNode = Expressions.RawMarkupNode; 'use strict';
+define('Inferno/third-party/index.dev', ['Core/helpers/String/unEscapeASCII', 'Env/Env', 'Application/Env', 'Core/ReactiveObserver', 'Application/Initializer', 'Core/Serializer', 'Core/helpers/Hcontrol/isElementVisible'], function (unEscapeASCII, Env, Request, ReactiveObserver, AppInit, Serializer, isElementVisible) {
+'use strict';
+function initInfernoIndex(Expressions, Utils, Markup, Vdom, Focus) {
+    ExpressionsLib = Expressions;
+    ViewUtilsLib = Utils;
+    VdomLib = Vdom;
+    MarkupLib = Markup;
+    FocusLib = Focus;
+}
+var exports = {};
+
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+var MarkupLib;
+var FocusLib;
+var ExpressionsLib;
+var ViewUtilsLib;
+var VdomLib;
+
+// @ts-ignore
 var ERROR_MSG = 'a runtime error occured! Use Inferno in development environment to find the error.';
 var isArray = Array.isArray;
 function isStringOrNumber(o) {
     var type = typeof o;
-    // @ts-ignore
-    return type === 'string' || type === 'number' || type instanceof RawMarkupNode;
+    return type === 'string' || type === 'number' || o instanceof ExpressionsLib.RawMarkupNode;
 }
 function isNullOrUndef(o) {
     return isUndefined(o) || isNull(o);
@@ -42,7 +58,7 @@ function throwError(message) {
 function warning(message) {
     // tslint:disable-next-line:no-console
     // @ts-ignore
-    IoC.resolve("ILogger").log("Inferno core", message);
+    Env.IoC.resolve("ILogger").log("Inferno core", message);
 }
 function combineFrom(first, second) {
     var out = {};
@@ -87,7 +103,32 @@ function insertOrAppend(parentDOM, newNode, nextNode) {
         appendChild(parentDOM, newNode);
     }
     else {
-        parentDOM.insertBefore(newNode, nextNode);
+        if (nextNode && (nextNode.controlClass || nextNode.template)) {
+            parentDOM.insertBefore(newNode, findDOMfromVNode(nextNode, true));
+        }
+        else if (nextNode && nextNode.dom) {
+            parentDOM.insertBefore(newNode, nextNode.dom);
+        }
+        else {
+            // @ts-ignore
+            if ((Env.detection.isIE10 || Env.detection.isIE11) && nextNode.nodeValue === '') {
+                if (parentDOM.firstChild) {
+                    // We have to use parentDOM.firstChild only in the case when it's childNodes length equals to 1
+                    if (parentDOM.childNodes.length === 1) {
+                        parentDOM.insertBefore(newNode, parentDOM.firstChild);
+                    }
+                    else {
+                        parentDOM.insertBefore(newNode, nextNode);
+                    }
+                }
+                else {
+                    parentDOM.insertBefore(newNode, nextNode);
+                }
+            }
+            else {
+                parentDOM.insertBefore(newNode, nextNode);
+            }
+        }
     }
 }
 function documentCreateElement(tag, isSVG) {
@@ -100,7 +141,23 @@ function replaceChild(parentDOM, newDom, lastDom) {
     parentDOM.replaceChild(newDom, lastDom);
 }
 function removeChild(parentDOM, childNode) {
-    parentDOM.removeChild(childNode);
+    // @ts-ignore
+    if (Env.detection.isIE10 || Env.detection.isIE11) {
+        if (childNode.nodeValue === '') {
+            if (parentDOM.firstChild && parentDOM.childNodes && parentDOM.childNodes.length === 1) {
+                parentDOM.removeChild(parentDOM.firstChild);
+            }
+            else if (parentDOM.firstChild !== null) {
+                parentDOM.removeChild(childNode);
+            }
+        }
+        else if (childNode.parentNode) {
+            parentDOM.removeChild(childNode);
+        }
+    }
+    else {
+        parentDOM.removeChild(childNode);
+    }
 }
 function callAll(arrayFn) {
     var listener;
@@ -123,6 +180,37 @@ function findDOMfromVNode(vNode, start) {
         else if (flags & 4 /* ComponentClass */) {
             vNode = children.$LI;
         }
+        else if (flags & 131072 /* WasabyControl */) {
+            // @ts-ignore
+            if (!vNode.compound) {
+                // @ts-ignore
+                if (!vNode.instance.element || !vNode.instance.markup.dom) {
+                    // @ts-ignore
+                    if (vNode.instance.markup && vNode.instance.markup.instance) {
+                        // @ts-ignore
+                        return findDOMfromVNode(vNode.instance.markup);
+                    }
+                }
+                // @ts-ignore
+                return vNode.instance.element || vNode.instance.markup.dom || null;
+            }
+            else {
+                // @ts-ignore
+                return vNode.instance.markup.dom || null;
+            }
+        }
+        else if (flags & 262144 /* TemplateWasabyNode */) {
+            if (vNode.markup[0]) {
+                if (!vNode.markup[0].dom && (vNode.markup[0].template || vNode.markup[0].controlClass)) {
+                    // @ts-ignore
+                    return findDOMfromVNode(vNode.markup[0]);
+                }
+                return vNode.markup[0].dom || null;
+            }
+            else {
+                return null;
+            }
+        }
         else {
             vNode = children;
         }
@@ -133,6 +221,22 @@ function removeVNodeDOM(vNode, parentDOM) {
     var flags = vNode.flags;
     if (flags & 2033 /* DOMRef */) {
         removeChild(parentDOM, vNode.dom);
+    }
+    else if (flags & 131072 /* WasabyControl */) {
+        // CompoundControls remove their containers automatically when destroyed
+        // @ts-ignore
+        if (!vNode.compound) {
+            // @ts-ignore
+            var realDom = vNode.instance && vNode.instance.element;
+            if (realDom && realDom.parentElement && parentDOM.contains(realDom)) {
+                removeChild(parentDOM, realDom);
+            }
+        }
+    }
+    else if (flags & 262144 /* TemplateWasabyNode */) {
+        for (var i = 0, len = vNode.markup.length; i < len; ++i) {
+            removeVNodeDOM(vNode.markup[i], parentDOM);
+        }
     }
     else {
         var children = vNode.children;
@@ -147,8 +251,8 @@ function removeVNodeDOM(vNode, parentDOM) {
                 removeVNodeDOM(children, parentDOM);
             }
             else {
-                for (var i = 0, len = children.length; i < len; ++i) {
-                    removeVNodeDOM(children[i], parentDOM);
+                for (var i$1 = 0, len$1 = children.length; i$1 < len$1; ++i$1) {
+                    removeVNodeDOM(children[i$1], parentDOM);
                 }
             }
         }
@@ -159,8 +263,11 @@ function moveVNodeDOM(vNode, parentDOM, nextNode) {
     if (flags & 2033 /* DOMRef */) {
         insertOrAppend(parentDOM, vNode.dom, nextNode);
     }
+    else if (flags & 131072 /* WasabyControl */) {
+        insertOrAppend(parentDOM, vNode.instance.element, nextNode);
+    }
     else {
-        var children = vNode.children;
+        var children = vNode.children || vNode.markup;
         if (flags & 4 /* ComponentClass */) {
             moveVNodeDOM(children.$LI, parentDOM, nextNode);
         }
@@ -175,6 +282,11 @@ function moveVNodeDOM(vNode, parentDOM, nextNode) {
                 for (var i = 0, len = children.length; i < len; ++i) {
                     moveVNodeDOM(children[i], parentDOM, nextNode);
                 }
+            }
+        }
+        else if (flags & 262144 /* TemplateWasabyNode */) {
+            for (var i$1 = 0, len$1 = children.length; i$1 < len$1; ++i$1) {
+                moveVNodeDOM(children[i$1], parentDOM, nextNode);
             }
         }
     }
@@ -219,7 +331,7 @@ function getTagName(input) {
             tagName = "Portal*";
         }
         else {
-            tagName = "<" + (getComponentName(input.type)) + " />";
+            tagName = "<" + (getComponentName(input.type || (input.controlClass && input.controlClass.prototype && input.controlClass.prototype._moduleName))) + " />";
         }
     }
     return '>> ' + tagName + '\n';
@@ -297,7 +409,7 @@ function DEV_ValidateKeys(vNodeTree, forceKeyed) {
             // In case of duplicate keys we don't want to crash the whole app because of that,
             // so we have to create a fixed duplicate on the fly
             // @ts-ignore
-            IoC.resolve("ILogger").error('Deoptimizing perfomance due to duplicate node keys', 'Encountered two children with same key: {' + key + '}. Location: \n' + getTagName(childNode));
+            Env.IoC.resolve("ILogger").error('Deoptimizing perfomance due to duplicate node keys', 'Encountered two children with same key: {' + key + '}. Location: \n' + getTagName(childNode));
             key = duplicateKeys(childNode.key, foundKeys);
             childNode.key = key;
             // return 'Encountered two children with same key: {' + key + '}. Location: \n' + getTagName(childNode);
@@ -316,33 +428,37 @@ function validateVNodeElementChildren(vNode) {
         if (vNode.flags & 128 /* TextareaElement */) {
             throwError("textarea elements can't have children.");
         }
-        if (vNode.flags & 481 /* Element */) {
-            var voidTypes = {
-                area: true,
-                base: true,
-                br: true,
-                col: true,
-                command: true,
-                embed: true,
-                hr: true,
-                img: true,
-                input: true,
-                keygen: true,
-                link: true,
-                meta: true,
-                param: true,
-                source: true,
-                track: true,
-                wbr: true
-            };
-            var tag = vNode.type.toLowerCase();
+        /* COMMENTED UNUSED AND USELESS CODE
+        if (vNode.flags & VNodeFlags.Element) {
+          const voidTypes = {
+            area: true,
+            base: true,
+            br: true,
+            col: true,
+            command: true,
+            embed: true,
+            hr: true,
+            img: true,
+            input: true,
+            keygen: true,
+            link: true,
+            meta: true,
+            param: true,
+            source: true,
+            track: true,
+            wbr: true
+          };
+          let tag = vNode.type.toLowerCase();
+          if (false) {
             if (tag === 'media') {
-                throwError("media elements can't have children.");
+              throwError("media elements can't have children.");
             }
             if (voidTypes[tag]) {
-                throwError((tag + " elements can't have children."));
+              throwError((tag + " elements can't have children."));
             }
+          }
         }
+        */
     }
 }
 function validateKeys(vNode) {
@@ -533,6 +649,9 @@ function directClone(vNodeToClone) {
         }
     }
     if (!flags && typeof vNodeToClone.markup === 'string' /* RawMarkupNode Type WS bugfix */) {
+        return vNodeToClone;
+    }
+    if (flags & 131072 /* WasabyControl */) {
         return vNodeToClone;
     }
     if ((flags & 8192 /* Fragment */) === 0) {
@@ -1069,6 +1188,21 @@ function mountRef(ref, value, lifecycle) {
     }
 }
 
+function compoundUnmountProcess(controlNode) {
+    var control = controlNode.control;
+    var options$$1 = controlNode.options;
+    var name = options$$1.name;
+    var logicParent = options$$1.logicParent;
+    if (logicParent && name) {
+        if (logicParent._children && logicParent._children[name]) {
+            delete logicParent._children[name];
+        }
+        if (logicParent._nativeElements && logicParent._nativeElements[name]) {
+            delete logicParent._nativeElements[name];
+        }
+    }
+    control.destroy();
+}
 function remove(vNode, parentDOM) {
     unmount(vNode);
     if (parentDOM) {
@@ -1082,7 +1216,6 @@ function unmount(vNode) {
     if (flags & 481 /* Element */) {
         ref = vNode.ref;
         var props = vNode.props;
-        unmountRef(ref);
         var childFlags = vNode.childFlags;
         if (!isNull(props)) {
             var keys = Object.keys(props);
@@ -1099,6 +1232,23 @@ function unmount(vNode) {
         else if (childFlags === 2 /* HasVNodeChildren */) {
             unmount(children);
         }
+        unmountRef(ref);
+    }
+    else if (flags & 131072 /* WasabyControl */) {
+        if (!vNode.compound) {
+            unmount(vNode.instance.markup);
+            if (!vNode.instance.control._destroyed) {
+                vNode.instance.control.destroy();
+            }
+            vNode.instance.control._mounted = false;
+            vNode.instance.control._unmounted = true;
+        }
+        else {
+            compoundUnmountProcess(vNode.instance);
+        }
+    }
+    else if (flags & 262144 /* TemplateWasabyNode */) {
+        unmountAllChildren(vNode.markup);
     }
     else if (children) {
         if (flags & 4 /* ComponentClass */) {
@@ -1138,6 +1288,9 @@ function clearDOM(dom) {
 function removeAllChildren(dom, vNode, children) {
     unmountAllChildren(children);
     if (vNode.flags & 8192 /* Fragment */) {
+        removeVNodeDOM(vNode, dom);
+    }
+    else if (vNode.flags & 262144 /* TemplateWasabyNode */) {
         removeVNodeDOM(vNode, dom);
     }
     else {
@@ -1280,6 +1433,14 @@ function patchProp(prop, lastValue, nextValue, dom, isSVG, hasControlledValue, l
             break;
         case 'ws-delegates-tabfocus':
             break;
+        case 'title':
+            if (isNullOrUndef(nextValue)) {
+                dom.removeAttribute(prop);
+            }
+            else {
+                dom.setAttribute(prop, nextValue);
+            }
+            break;
         default:
             if (delegatedEvents[prop]) {
                 if (!(lastValue &&
@@ -1411,10 +1572,172 @@ function handleComponentInput(input) {
     return input;
 }
 
-function mount(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isRootStart) {
+function getModuleDefaultCtor(mod) {
+    // @ts-nocheck
+    return typeof mod === 'function' ? mod : mod.constructor;
+}
+function getControlNodeParams(control, environment) {
+    var composedDecorator = VdomLib.Functional.composeWithResultApply.call(undefined, [environment.getMarkupNodeDecorator()]).bind(control);
+    return {
+        defaultOptions: {},
+        markupDecorator: composedDecorator
+    };
+}
+function collectObjectVersions(collection) {
+    var versions = {};
+    for (var key in collection) {
+        if (collection.hasOwnProperty(key)) {
+            if (collection[key] && collection[key].getVersion) {
+                versions[key] = collection[key].getVersion();
+            }
+            else if (collection[key] && collection[key].isDataArray) {
+                // тут нужно собрать версии всех объектов,
+                // которые используются внутри контентных опций
+                // здесь учитывается кейс, когда внутри контентной опции
+                // есть контентная опция
+                // по итогу получаем плоский список всех версий всех объектов
+                // внутри контентных опций
+                for (var kfn = 0; kfn < collection[key].length; kfn++) {
+                    var innerVersions = collectObjectVersions(collection[key][kfn].internal || {});
+                    for (var innerKey in innerVersions) {
+                        if (innerVersions.hasOwnProperty(innerKey)) {
+                            versions[key + ';' + kfn + ';' + innerKey] = innerVersions[innerKey];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return versions;
+}
+function shallowMerge(dest, src) {
+    var i;
+    for (i in src) {
+        if (src.hasOwnProperty(i)) {
+            dest[i] = src[i];
+        }
+    }
+    return dest;
+}
+function fixInternalParentOptions(internalOptions, userOptions, parentNode) {
+    // У compound-контрола parent может уже лежать в user-опциях, берем его оттуда, если нет нашей parentNode
+    internalOptions.parent = internalOptions.parent || (parentNode && parentNode.control) || userOptions.parent || null;
+    internalOptions.logicParent =
+        internalOptions.logicParent ||
+            (parentNode && parentNode.control && parentNode.control.logicParent) ||
+            userOptions.logicParent ||
+            null;
+}
+function getDecoratedMarkup(controlNode, isRoot) {
+    return controlNode.control._getMarkup(controlNode.key, isRoot, {
+        attributes: controlNode.attributes,
+        domNodeProps: controlNode.domNodeProps,
+        events: controlNode.events,
+        inheritOptions: controlNode.inheritOptions,
+        internal: controlNode.internal,
+        key: controlNode.key,
+        templateContext: controlNode.templateContext
+    });
+}
+function createNode(controlClass_, options, key, environment, parentNode, serialized, vnode) {
+    var controlCnstr = getModuleDefaultCtor(controlClass_);
+    var compound = vnode && vnode.compound;
+    var serializedState = (serialized && serialized.state) || { vdomCORE: true }; // сериализованное состояние компонента
+    var userOptions = options.user; // прикладные опции
+    var internalOptions = options.internal || {}; // служебные опции
+    var result;
+    fixInternalParentOptions(internalOptions, userOptions, parentNode);
+    if (!key) {
+        /*У каждой ноды должен быть ключ
+         * for строит внутренние ноды относительно этого ключа
+         * */
+        key = '_';
+    }
+    if (compound) {
+        // Создаем виртуальную ноду для compound контрола
+        result = ViewUtilsLib.Compatible.createCompoundControlNode(controlClass_, controlCnstr, [], userOptions, internalOptions, key, parentNode, vnode, MarkupLib.GeneratorText);
+        result.environment = environment;
+        return result;
+    }
+    else {
+        // Создаем виртуальную ноду для не-compound контрола
+        var invisible = vnode && vnode.invisible;
+        // подмешиваем сериализованное состояние к прикладным опциям
+        var optionsWithState = serializedState ? shallowMerge(userOptions, serializedState) : userOptions;
+        var optionsVersions;
+        var contextVersions;
+        var control;
+        // @ts-ignore
+        var params;
+        var context;
+        var instCompat;
+        var defaultOptions;
+        if (typeof controlClass_ === 'function') {
+            // создаем инстанс компонента
+            instCompat = ViewUtilsLib.Compatible.createInstanceCompatible(controlCnstr, optionsWithState, internalOptions);
+            control = instCompat.instance;
+            optionsWithState = instCompat.resolvedOptions;
+            defaultOptions = instCompat.defaultOptions;
+        }
+        else {
+            // инстанс уже есть, работаем с его опциями
+            control = controlClass_;
+            defaultOptions = ViewUtilsLib.OptionsResolver.getDefaultOptions(controlClass_);
+            // @ts-ignore
+            if (isJs.compat) {
+                optionsWithState = ViewUtilsLib.Compatible.combineOptionsIfCompatible(controlCnstr.prototype, optionsWithState, internalOptions);
+                if (control._setInternalOptions) {
+                    control._options.doNotSetParent = true;
+                    control._setInternalOptions(internalOptions || {});
+                }
+            }
+        }
+        // check current options versions
+        optionsVersions = collectObjectVersions(optionsWithState);
+        // check current context field versions
+        context = (vnode && vnode.context) || {};
+        contextVersions = collectObjectVersions(context);
+        params = getControlNodeParams(control, environment);
+        result = new WCN(options, control, controlCnstr, optionsWithState, internalOptions, optionsVersions, serialized, parentNode, key, invisible, params, defaultOptions, vnode, contextVersions);
+        environment.setupControlNode(result);
+        return result;
+    }
+}
+function WCN(options, control, controlCnstr, optionsWithState, internalOptions, optionsVersions, serialized, parentNode, key, invisible, params, defaultOptions, vnode, contextVersions) {
+    this.attributes = options.attributes;
+    this.events = options.events;
+    this.control = control;
+    this.errors = serialized && serialized.errors;
+    this.controlClass = controlCnstr;
+    this.options = optionsWithState;
+    this.internalOptions = internalOptions;
+    this.optionsVersions = optionsVersions;
+    this.id = control._instId || 0;
+    this.idCount = parseInt(this.id.replace('inst_', ''), 10);
+    this.parent = parentNode;
+    this.key = key;
+    this.defaultOptions = defaultOptions;
+    this.markup = invisible ? createTextVNode('') : undefined;
+    this.fullMarkup = undefined;
+    this.childrenNodes = [];
+    this.markupDecorator = params && params.markupDecorator;
+    this.serializedChildren = serialized && serialized.childrenNodes;
+    this.hasCompound = false;
+    this.receivedState = undefined;
+    this.invisible = invisible;
+    this.contextVersions = contextVersions;
+    this.context = (vnode && vnode.context) || {},
+        this.inheritOptions = (vnode && vnode.inheritOptions) || {};
+}
+var nextTickWasaby = typeof Promise !== 'undefined' ? Promise.resolve().then.bind(Promise.resolve()) : setTimeout.bind(window);
+
+function ifRawMarkupNode(vNode) {
+    return vNode && vNode.hasOwnProperty('nodeProperties') && vNode.hasOwnProperty('markup');
+}
+function mount(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
     var flags = (vNode.flags |= 16384 /* InUse */);
     if (flags & 481 /* Element */) {
-        mountElement(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isRootStart);
+        mountElement(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode);
     }
     else if (flags & 4 /* ComponentClass */) {
         mountClassComponent(vNode, parentDOM, context, isSVG, nextNode, lifecycle);
@@ -1430,10 +1753,15 @@ function mount(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isRootStar
     }
     else if (flags & 1024 /* Portal */) {
         mountPortal(vNode, context, parentDOM, nextNode, lifecycle);
-        // @ts-ignore
     }
-    else if (vNode instanceof RawMarkupNode) {
-        return mountHTML(vNode, parentDOM);
+    else if (vNode instanceof ExpressionsLib.RawMarkupNode || ifRawMarkupNode(vNode)) {
+        return mountHTML(vNode, parentDOM, nextNode);
+    }
+    else if (flags & 131072 /* WasabyControl */ || flags === 147456) {
+        mountWasabyControl(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
+    }
+    else if (flags & 262144 /* TemplateWasabyNode */) {
+        mountWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
     }
     else {
         // Development validation, in production we don't need to throw because it crashes anyway
@@ -1445,11 +1773,11 @@ function mount(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isRootStar
         }
     }
 }
-function mountHTML(vNode, parentDom) {
+function mountHTML(vNode, parentDom, nextNode) {
     // @ts-ignore
     var dom = (vNode.dom = $(vNode.markup)[0]);
     if (!isNull(parentDom)) {
-        insertOrAppend(parentDom, dom, null);
+        insertOrAppend(parentDom, dom, nextNode);
     }
     return dom;
 }
@@ -1477,7 +1805,143 @@ function mountText(vNode, parentDOM, nextNode) {
 function mountTextContent(dom, children) {
     dom.textContent = children;
 }
-function mountElement(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isRootStart) {
+function closest(sourceElement, rootElement) {
+    while (sourceElement.parentNode) {
+        sourceElement = sourceElement.parentNode;
+        if (sourceElement === rootElement) {
+            return true;
+        }
+    }
+    return false;
+}
+function fireEvent(e) {
+    if (!this._rootDOMNode) {
+        return;
+    }
+    var relatedTarget = e.relatedTarget || document.body;
+    var target = e.target;
+    var evt = document.createEvent('Events');
+    evt.initEvent('keydown', true, true);
+    var shifted = false;
+    if (target.className === 'vdom-focus-in') {
+        if (closest(relatedTarget, this._rootDOMNode)) {
+            // в vdom-focus-in прилетели либо изнутри контейнера, либо сверху потому что зациклились, shift - только если изнутри
+            if (!(relatedTarget.classList.contains('vdom-focus-out') && this._rootDOMNode['ws-tab-cycling'] === 'true')) {
+                shifted = true;
+            }
+        }
+    }
+    if (target.className === 'vdom-focus-out') {
+        if (!closest(relatedTarget, this._rootDOMNode)) {
+            // в vdom-focus-out прилетели либо снаружи контейнера, либо снизу потому что зациклились, shift - и если снаружи и если зациклились
+            shifted = true;
+        }
+    }
+    // @ts-ignore
+    evt.view = window;
+    // @ts-ignore
+    evt.altKey = false;
+    // @ts-ignore
+    evt.ctrlKey = false;
+    // @ts-ignore
+    evt.shiftKey = shifted;
+    // @ts-ignore
+    evt.metaKey = false;
+    // @ts-ignore
+    evt.keyCode = 9;
+    target.dispatchEvent(evt);
+}
+function findFirstVNode(arr) {
+    if (!Array.isArray(arr)) {
+        return null;
+    }
+    return arr.find(function (value) {
+        return !!value;
+    });
+}
+function appendFocusesElements(self, vnode) {
+    var firstChild = findFirstVNode(vnode.children);
+    var fireTab = function (e) {
+        fireEvent.call(self, e);
+    };
+    var hookOut = function hookOut(node) {
+        if (node) {
+            node.addEventListener('focus', fireTab);
+        }
+    };
+    // добавляем ноды vdom-focus-in и vdom-focus-out тольео если есть какие-то внутренние ноды
+    if (firstChild && firstChild.key !== 'vdom-focus-in') {
+        var focusInNode = createVNode(getFlagsForElementVnode('a'), 'a', 'vdom-focus-in', [], 0, {
+            class: 'vdom-focus-in',
+            tabindex: '1'
+        }, 'vdom-focus-in', hookOut);
+        var focusOutNode = createVNode(getFlagsForElementVnode('a'), 'a', 'vdom-focus-out', [], 0, {
+            class: 'vdom-focus-out',
+            tabindex: '0'
+        }, 'vdom-focus-out', hookOut);
+        // @ts-ignore
+        vnode.children = [].concat(focusInNode, vnode.children, focusOutNode);
+        return { in: focusInNode, out: focusOutNode };
+    }
+    return false;
+}
+/**
+   * We have to find focus elements, that belongs to the specific rootNode
+   * @param elem
+   * @param cssClass
+   * @returns {*}
+   */
+/**
+ * We have to find focus elements, that belongs to the specific rootNode
+ * @param elem
+ * @param cssClass
+ * @returns {*}
+ */
+function findDirectChildren(elem, cssClass) {
+    return Array.prototype.filter.call(elem.children, function (el) {
+        return el.matches(cssClass);
+    });
+} /**
+ * We have to insert focus elements are already in the DOM,  before virtual dom synchronization
+ * @param rootElement
+ */
+/**
+ * We have to insert focus elements are already in the DOM,  before virtual dom synchronization
+ * @param rootElement
+ */
+function appendFocusElementsToDOM(rootElement, appendedElements) {
+    var firstChild = rootElement.firstChild;
+    if (firstChild && firstChild.classList && !firstChild.classList.contains('vdom-focus-in')) {
+        var vdomFocusInElems = findDirectChildren(rootElement, '.vdom-focus-in');
+        var vdomFocusOutElems = findDirectChildren(rootElement, '.vdom-focus-out');
+        var focusInElem = vdomFocusInElems.length ? vdomFocusInElems[0] : document.createElement('a');
+        focusInElem.classList.add('vdom-focus-in');
+        focusInElem.tabIndex = 1;
+        var focusOutElem = vdomFocusOutElems.length ? vdomFocusOutElems[0] : document.createElement('a');
+        focusOutElem.classList.add('vdom-focus-out');
+        focusOutElem.tabIndex = 0;
+        rootElement.insertBefore(focusInElem, firstChild);
+        rootElement.appendChild(focusOutElem);
+        appendedElements.in.dom = focusInElem;
+        appendedElements.out.dom = focusOutElem;
+        return true;
+    }
+    return false;
+}
+function appendForFocuses(vNode, environment) {
+    if (vNode.type === 'body') {
+        if (vNode && vNode.children) {
+            var appendedElements = appendFocusesElements(environment, vNode);
+            if (appendedElements) {
+                var bodyDOM = vNode.dom;
+                if (bodyDOM) {
+                    appendFocusElementsToDOM(bodyDOM, appendedElements);
+                }
+            }
+        }
+    }
+}
+function mountElement(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode) {
     var flags = vNode.flags;
     var props = vNode.props;
     var className = vNode.className;
@@ -1485,8 +1949,9 @@ function mountElement(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isR
     var children = vNode.children;
     var childFlags = vNode.childFlags;
     isSVG = isSVG || (flags & 32 /* SvgElement */) > 0;
-    var dom = isRootStart ? parentDOM : documentCreateElement(vNode.type, isSVG);
+    var dom = isRootStart && parentDOM ? parentDOM : documentCreateElement(vNode.type, isSVG);
     vNode.dom = dom;
+    appendForFocuses(vNode, environment);
     if (!isNullOrUndef(className) && className !== '') {
         if (dom) {
             if (isSVG) {
@@ -1501,7 +1966,19 @@ function mountElement(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isR
         validateKeys(vNode);
     }
     if (!isRootStart && !isNull(parentDOM)) {
-        insertOrAppend(parentDOM, dom, nextNode);
+        if (parentDOM !== nextNode) {
+            insertOrAppend(parentDOM, dom, nextNode);
+        }
+        else {
+            vNode.dom = nextNode;
+            dom = nextNode;
+        }
+    }
+    if (vNode.hprops && vNode.hprops.events && Object.keys(vNode.hprops.events).length > 0) {
+        var setEventFunction = VdomLib.Hooks.setEventHooks(environment);
+        var templateNodeEventRef = setEventFunction(vNode.type, vNode.hprops, vNode.children, vNode.key, parentControlNode, vNode.ref);
+        vNode.ref = templateNodeEventRef[4];
+        ref = vNode.ref;
     }
     if (childFlags === 16 /* HasTextChildren */) {
         if (dom) {
@@ -1514,11 +1991,11 @@ function mountElement(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isR
             if (children.flags & 16384 /* InUse */) {
                 vNode.children = children = directClone(children);
             }
-            mount(children, dom, context, childrenIsSVG, null, lifecycle);
+            mount(children, dom, context, childrenIsSVG, null, lifecycle, parentControlNode, vNode);
         }
         else if (childFlags === 8 /* HasKeyedChildren */ || childFlags === 4 /* HasNonKeyedChildren */) {
             if (dom) {
-                mountArrayChildren(children, dom, context, childrenIsSVG, null, lifecycle);
+                mountArrayChildren(children, dom, context, childrenIsSVG, null, lifecycle, environment, parentControlNode, vNode);
             }
         }
     }
@@ -1542,13 +2019,18 @@ function mountElement(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isR
     }
     mountRef(ref, dom, lifecycle);
 }
-function mountArrayChildren(children, dom, context, isSVG, nextNode, lifecycle) {
+function mountArrayChildren(children, dom, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNode) {
     for (var i = 0, len = children.length; i < len; ++i) {
         var child = children[i];
         if (child.flags & 16384 /* InUse */) {
             children[i] = child = directClone(child);
         }
-        mount(child, dom, context, isSVG, nextNode, lifecycle);
+        if (child.controlClass || child.template) {
+            if (!child.sibling) {
+                child.sibling = children[i + 1];
+            }
+        }
+        mount(child, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNode);
     }
 }
 function mountClassComponent(vNode, parentDOM, context, isSVG, nextNode, lifecycle) {
@@ -1556,6 +2038,594 @@ function mountClassComponent(vNode, parentDOM, context, isSVG, nextNode, lifecyc
     mount(instance.$LI, parentDOM, instance.$CX, isSVG, nextNode, lifecycle);
     mountClassComponentCallbacks(vNode.ref, instance, lifecycle);
     instance.$UPD = false;
+}
+function afterMountProcess(controlNode) {
+    try {
+        // @ts-ignore
+        var afterMountValue = controlNode.control._afterMount && controlNode.control._afterMount(controlNode.options, controlNode.context);
+        controlNode.control._mounted = true;
+        if (controlNode.control._$needForceUpdate) {
+            delete controlNode.control._$needForceUpdate;
+            controlNode.control._forceUpdate();
+        }
+    }
+    catch (error) {
+        // @ts-ignore
+        catchLifeCircleErrors('_afterMount', error, controlNode.control._moduleName);
+    }
+}
+function compoundMountProcess(controlNode) {
+    var options$$1 = controlNode.options;
+    var element = controlNode.markup.dom;
+    var name = options$$1.name;
+    var logicParent = options$$1.logicParent;
+    options$$1.element = element;
+    options$$1.hasMarkup = true;
+    options$$1.parent = null;
+    controlNode.control = new controlNode.controlClass(options$$1);
+    var control = controlNode.control;
+    if (logicParent && name) {
+        if (logicParent._children) {
+            logicParent._children[name] = control;
+        }
+        if (logicParent._nativeElements) {
+            logicParent._nativeElements[name] = element;
+        }
+    }
+}
+function beforeRenderCallback(controlNode) {
+    return function () {
+        try {
+            if (!controlNode.control._destroyed) {
+                // @ts-ignore
+                var afterUpdateResult = controlNode.control._beforeRender && controlNode.control._beforeRender();
+            }
+        }
+        catch (error) {
+            // @ts-ignore
+            catchLifeCircleErrors('beforeRender', error, controlNode.control._moduleName);
+        }
+    };
+}
+function mountWasabyCallback(controlNode) {
+    return function () {
+        if (controlNode.compound) {
+            compoundMountProcess(controlNode);
+        }
+        else {
+            // _reactiveStart means starting of monitor change in properties
+            controlNode.control._reactiveStart = true;
+            if (!controlNode.control._mounted && !controlNode.control._unmounted) {
+                if (controlNode.hasCompound) {
+                    VdomLib.runDelayedRebuild(function () {
+                        afterMountProcess(controlNode);
+                    });
+                }
+                else {
+                    afterMountProcess(controlNode);
+                }
+            }
+            else {
+                /**
+                 * TODO: удалить после синхронизации с контролами
+                 */
+                try {
+                    if (!controlNode.control._destroyed) {
+                        // @ts-ignore
+                        var afterUpdateResult = controlNode.control._afterRender && controlNode.control._afterRender();
+                    }
+                }
+                catch (error) {
+                    // @ts-ignore
+                    catchLifeCircleErrors('afterRender', error, controlNode.control._moduleName);
+                }
+                try {
+                    if (!controlNode.control._destroyed) {
+                        // @ts-ignore
+                        var afterUpdateResult$1 = controlNode.control._beforePaint && controlNode.control._beforePaint();
+                    }
+                }
+                catch (error) {
+                    // @ts-ignore
+                    catchLifeCircleErrors('beforePaint', error, controlNode.control._moduleName);
+                }
+                try {
+                    if (!controlNode.control._destroyed) {
+                        // @ts-ignore
+                        var afterUpdateResult$2 = controlNode.control._afterUpdate && controlNode.control._afterUpdate(controlNode.oldOptions || controlNode.options, controlNode.oldContext);
+                    }
+                }
+                catch (error) {
+                    // @ts-ignore
+                    catchLifeCircleErrors('_afterUpdate', error, controlNode.control._moduleName);
+                }
+                finally {
+                    // We need controlNode.oldOptions only in _afterUpdate method. Can delete them from node after using.
+                    delete controlNode.oldOptions;
+                }
+            }
+        }
+    };
+}
+function catchLifeCircleErrors(hookName, error, moduleName) {
+    // @ts-ignore
+    Env.IoC.resolve("ILogger").log('LIFECYCLE ERROR. IN CONTROL ' + moduleName + '. HOOK NAME: ' + hookName, error, error);
+}
+function findTopConfig(configId) {
+    return (configId + '').replace('cfg-', '').split(',')[0];
+}
+function fillCtx(control, vnode, resolvedCtx) {
+    control._saveContextObject(resolvedCtx);
+    control.saveFullContext(ExpressionsLib.ContextResolver.wrapContext(control, vnode.context || {}));
+}
+function getStateReadyOrCall(stateVar, control, vnode, serializer) {
+    var data;
+    var srec;
+    // @ts-ignore
+    if (AppInit.isInit()) {
+        // @ts-ignore
+        srec = Request.getStateReceiver();
+    }
+    if (srec && srec.register) {
+        srec.register(stateVar, {
+            getState: function getState() {
+                return {};
+            },
+            setState: function setState(rState) {
+                data = rState;
+            }
+        });
+    }
+    /* Compat layer. For page without Controls.Application */
+    if (!data && window["inline" + stateVar]) {
+        data = JSON.parse(window["inline" + stateVar], serializer.deserialize);
+        if (window["inline" + stateVar]) {
+            window["inline" + stateVar] = undefined;
+        }
+    }
+    var ctx = ExpressionsLib.ContextResolver.resolveContext(control.constructor, vnode.context || {}, control);
+    var res;
+    try {
+        res = data ? control._beforeMountLimited(vnode.controlProperties, ctx, data) : control._beforeMountLimited(vnode.controlProperties, ctx);
+    }
+    catch (error) {
+        // @ts-ignore
+        catchLifeCircleErrors('_beforeMount', error, control._moduleName);
+    }
+    if (res && res.then) {
+        res.then(function (resultDef) {
+            fillCtx(control, vnode, ctx);
+            return resultDef;
+        });
+    }
+    else {
+        fillCtx(control, vnode, ctx);
+    }
+    if (!vnode.inheritOptions) {
+        vnode.inheritOptions = {};
+    }
+    ViewUtilsLib.OptionsResolver.resolveInheritOptions(vnode.controlClass, vnode, vnode.controlProperties);
+    control.saveInheritOptions(vnode.inheritOptions);
+    if (srec && srec.unregister) {
+        srec.unregister(stateVar);
+    }
+    return res;
+}
+function updateWasabyControl(controlNode, parentDOM, lifecycle) {
+    var shouldUp;
+    try {
+        var resolvedContext;
+        //  Logger.log('DirtyChecking (update node with changed)', [
+        //      '',
+        //      '',
+        //      changedOptions || changedInternalOptions || changedAttrs || changedContext
+        //  ]);
+        controlNode.environment.setRebuildIgnoreId(controlNode.id);
+        ViewUtilsLib.OptionsResolver.resolveInheritOptions(controlNode.controlClass, controlNode, controlNode.options);
+        controlNode.control.saveInheritOptions(controlNode.inheritOptions);
+        resolvedContext = ExpressionsLib.ContextResolver.resolveContext(controlNode.controlClass, controlNode.context, controlNode.control);
+        // Forbid force update in the time between _beforeUpdate and _afterUpdate
+        // @ts-ignore
+        ReactiveObserver.pauseReactive(controlNode.control, function () {
+            // Forbid force update in the time between _beforeUpdate and _afterUpdate
+            // @ts-ignore
+            var beforeUpdateResults = controlNode.control._beforeUpdate && controlNode.control.__beforeUpdate(controlNode.control._options, resolvedContext);
+        });
+        // controlNode.control._options = newOptions;
+        // @ts-ignore
+        var shouldUpdate = (controlNode.control._shouldUpdate ? controlNode.control._shouldUpdate(controlNode.control._options, resolvedContext) : true);
+        // controlNode.control._setInternalOptions(changedInternalOptions || {});
+        controlNode.oldOptions = controlNode.options; // TODO Для afterUpdate подумать, как еще можно передать
+        // TODO Для afterUpdate подумать, как еще можно передать
+        controlNode.oldContext = controlNode.context; // TODO Для afterUpdate подумать, как еще можно передать
+        // TODO Для afterUpdate подумать, как еще можно передать
+        // controlNode.attributes = nextVNode.controlAttributes;
+        // controlNode.events = nextVNode.controlEvents;
+        controlNode.control._saveContextObject(resolvedContext);
+        controlNode.control.saveFullContext(ExpressionsLib.ContextResolver.wrapContext(controlNode.control, controlNode.control._context));
+    }
+    finally {
+        /**
+         * TODO: удалить после синхронизации с контролами
+         */
+        shouldUp = controlNode.control._shouldUpdate ? controlNode.control._shouldUpdate(controlNode.control._options, controlNode.context) : true;
+    }
+    if (shouldUp) {
+        controlNode.control.saveFullContext(ExpressionsLib.ContextResolver.wrapContext(controlNode.control, controlNode.context || {}));
+        // @ts-ignore
+        var nextInput = getDecoratedMarkup(controlNode, false);
+        var controlElement = (nextInput.instance && nextInput.instance.markup.dom) || controlNode.element;
+        // nextVNode.instance = controlNode;
+        nextInput.ref = controlNode.markup.ref;
+        lifecycle.mount.push(beforeRenderCallback(controlNode));
+        // @ts-ignore
+        patch$1(controlNode.markup, nextInput, parentDOM, {}, false, controlElement, lifecycle, false, controlNode.environment, controlNode);
+        controlNode.markup = nextInput;
+        controlNode.fullMarkup = controlNode.markup;
+        lifecycle.mount.push(mountWasabyCallback(controlNode));
+    }
+}
+function applyWasabyState(component, pNode) {
+    var lifecycle = [];
+    // @ts-ignore
+    lifecycle.mount = [];
+    var controlContainer = (component.control._container && (component.control._container[0] || component.control._container));
+    var savedActiveElement = document.activeElement;
+    var prevControls = FocusLib.goUpByControlTree(savedActiveElement);
+    updateWasabyControl(component, pNode || controlContainer, lifecycle);
+    component.environment._restoreFocusState = true; // если сразу после изменения DOM-дерева фокус слетел в body, пытаемся восстановить фокус на ближайший элемент от
+    // предыдущего активного, чтобы сохранить контекст фокуса и дать возможность управлять с клавиатуры
+    // если сразу после изменения DOM-дерева фокус слетел в body, пытаемся восстановить фокус на ближайший элемент от
+    // предыдущего активного, чтобы сохранить контекст фокуса и дать возможность управлять с клавиатуры
+    if (document.activeElement === document.body && document.activeElement !== savedActiveElement) {
+        prevControls.find(function (control) {
+            var container = control._container[0] ? control._container[0] : control._container;
+            // @ts-ignore
+            return isElementVisible(control._container) && FocusLib.focus(container);
+        });
+    }
+    component.environment._restoreFocusState = false; // для совместимости, фокус устанавливаелся через старый механизм setActive, нужно восстановить фокус после _rebuild
+    // для совместимости, фокус устанавливаелся через старый механизм setActive, нужно восстановить фокус после _rebuild
+    if (component.control.__$focusing) {
+        component.control.activate(); // до синхронизации мы сохранили __$focusing - фокусируемый элемент, а после синхронизации здесь фокусируем его.
+        // если не нашли фокусируемый элемент - значит в доме не оказалось этого элемента.
+        // но мы все равно отменяем скинем флаг, чтобы он не сфокусировался позже когда уже не надо
+        // https://online.sbis.ru/opendoc.html?guid=e46d87cc-5dc2-4f67-b39c-5eeea973b2cc
+        // до синхронизации мы сохранили __$focusing - фокусируемый элемент, а после синхронизации здесь фокусируем его.
+        // если не нашли фокусируемый элемент - значит в доме не оказалось этого элемента.
+        // но мы все равно отменяем скинем флаг, чтобы он не сфокусировался позже когда уже не надо
+        // https://online.sbis.ru/opendoc.html?guid=e46d87cc-5dc2-4f67-b39c-5eeea973b2cc
+        component.control.__$focusing = false;
+    }
+    component.environment.addTabListener();
+    // Call all lifecycle if all async controls in current environment are updated.
+    if (Object.keys(component.environment.asyncRenderIds).length === 0) {
+        if (lifecycle.length > 0) {
+            callAll(lifecycle);
+        }
+        // @ts-ignore
+        if (lifecycle.mount.length > 0) {
+            // @ts-ignore
+            callAll(lifecycle.mount);
+        }
+    }
+}
+function startQueue(queue, environment) {
+    var filteredQueue = [].concat( queue );
+    filteredQueue.sort(function (a, b) { return b.idCount - a.idCount; });
+    rerenderWasaby(filteredQueue, environment);
+}
+// @ts-ignore
+function queueWasabyControlChanges(controlNode, regular) {
+    var queue = controlNode.environment.infernoQueue;
+    // @ts-ignore
+    if (queue.indexOf(controlNode) === -1) {
+        if (regular) {
+            queue.unshift(controlNode);
+        }
+        else {
+            queue.push(controlNode);
+        }
+    }
+    VdomLib.runDelayedRebuild(function () {
+        startQueue(controlNode.environment.infernoQueue, controlNode.environment);
+    });
+}
+function rerenderWasaby(queue, environment) {
+    var component;
+    while (Object.keys(environment.asyncRenderIds).length === 0 && (component = queue.pop())) {
+        var componentIndex = environment.infernoQueue.indexOf(component);
+        if (componentIndex !== -1) {
+            environment.infernoQueue.splice(componentIndex, 1);
+        }
+        if (component && component.control && component.control._mounted) {
+            applyWasabyState(component, component.parentDOM);
+        }
+    }
+}
+function setWasabyControlNodeHooks(controlNode, vNode, parentVNode, isRootStart, parentDOM, lifecycle, environment) {
+    var setHookFunction;
+    var controlNodeRef;
+    var setEventFunction;
+    var controlNodeEventRef;
+    // @ts-ignore
+    controlNode.markup = getDecoratedMarkup(controlNode, isRootStart);
+    if (controlNode.markup && controlNode.markup.type && controlNode.markup.type === 'invisible-node') {
+        setHookFunction = VdomLib.Hooks.setControlNodeHook(controlNode);
+        if (controlNode.markup.ref && parentVNode.ref) {
+            var cnmRef = controlNode.markup.ref;
+            // @ts-ignore
+            controlNode.markup.ref = function (domNode) {
+                cnmRef(parentDOM);
+                parentVNode.ref(parentDOM);
+            };
+        }
+        controlNodeRef = setHookFunction(controlNode.markup.type, controlNode.markup.props, controlNode.markup.children, controlNode.key, controlNode, parentVNode.ref || controlNode.markup.ref);
+        parentVNode.ref = controlNodeRef[4];
+        setEventFunction = VdomLib.Hooks.setEventHooks(environment);
+        controlNodeEventRef = setEventFunction(controlNode.markup.type, {
+            attributes: vNode.controlAttributes,
+            events: (controlNode.markup.hprops && controlNode.markup.hprops.events) || vNode.controlEvents
+        }, controlNode.markup.children, controlNode.key, controlNode, parentVNode.ref);
+        parentVNode.ref = controlNodeEventRef[4];
+        controlNode.fullMarkup = controlNode.markup;
+        vNode.instance = controlNode;
+        vNode.instance.parentDOM = parentDOM;
+        vNode.ref = parentVNode.ref;
+        mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
+    }
+    else {
+        setHookFunction = VdomLib.Hooks.setControlNodeHook(controlNode);
+        if (controlNode.markup.ref && vNode.ref) {
+            var cnmRef$1 = controlNode.markup.ref;
+            controlNode.markup.ref = function (domNode) {
+                cnmRef$1(domNode);
+                vNode.ref(domNode);
+            };
+        }
+        controlNodeRef = setHookFunction(controlNode.markup.type, controlNode.markup.props, controlNode.markup.children, controlNode.key, controlNode, controlNode.markup.ref || vNode.ref);
+        controlNode.markup.ref = controlNodeRef[4];
+        setEventFunction = VdomLib.Hooks.setEventHooks(environment);
+        controlNodeEventRef = setEventFunction(controlNode.markup.type, {
+            attributes: vNode.controlAttributes,
+            events: (controlNode.markup.hprops && controlNode.markup.hprops.events) || vNode.controlEvents
+        }, controlNode.markup.children, controlNode.key, controlNode, controlNode.markup.ref);
+        vNode.instance = controlNode;
+        vNode.instance.parentDOM = parentDOM;
+        vNode.instance.markup.ref = controlNodeEventRef[4];
+    }
+    return vNode;
+}
+// @ts-ignore
+var Slr = new Serializer();
+// @ts-ignore
+function createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode, fromHyd) {
+    var controlNode;
+    var carrier;
+    var setHookFunction;
+    var setEventFunction;
+    var controlNodeEventRef;
+    var controlNodeRef;
+    if (vNode && !vNode.instance) {
+        controlNode = createNode(vNode.controlClass, {
+            attributes: vNode.controlAttributes,
+            events: vNode.controlEvents,
+            internal: vNode.controlInternalProperties,
+            user: vNode.controlProperties
+        }, vNode.key, environment, parentControlNode, vNode.serialized, vNode);
+        if (!controlNode.compound) {
+            if (!controlNode.control._mounted && !controlNode.control._unmounted) {
+                var control = controlNode.control;
+                var rstate = controlNode.key ? findTopConfig(controlNode.key) : '';
+                if (control._beforeMountLimited) {
+                    carrier = getStateReadyOrCall(rstate, control, vNode, Slr);
+                }
+                if (carrier) {
+                    controlNode.receivedState = carrier;
+                }
+                if (controlNode.control.saveOptions) {
+                    controlNode.control.saveOptions(controlNode.options, controlNode);
+                }
+                else {
+                    /**
+                      * Поддержка для совместимости версий контролов
+                     */
+                    controlNode.control._options = controlNode.options;
+                    controlNode.control._container = controlNode.element;
+                    controlNode.control._setInternalOptions(vNode.controlInternalProperties || {});
+                }
+            }
+        }
+    }
+    else {
+        controlNode = vNode.instance;
+    }
+    if (carrier && carrier.then) {
+        controlNode.markup = createVNode(getFlagsForElementVnode('span'), 'span', '', [], 0, controlNode.attributes, controlNode.key);
+        vNode.instance = controlNode;
+        vNode.instance.parentDOM = parentDOM;
+        vNode.carrier = carrier;
+        // if (parentVNode) {
+        //   mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
+        // }
+    }
+    else if (!controlNode.compound) {
+        controlNode.control.saveFullContext(ExpressionsLib.ContextResolver.wrapContext(controlNode.control, controlNode.context || {}));
+        controlNode.markup = getDecoratedMarkup(controlNode, isRootStart);
+        if (controlNode.markup && controlNode.markup.type && controlNode.markup.type === 'invisible-node') {
+            setHookFunction = VdomLib.Hooks.setControlNodeHook(controlNode);
+            if (controlNode.markup.ref && parentVNode.ref) {
+                var cnmRef = controlNode.markup.ref;
+                // @ts-ignore
+                controlNode.markup.ref = function (domNode) {
+                    cnmRef(parentDOM);
+                    parentVNode.ref(parentDOM);
+                };
+            }
+            controlNodeRef = setHookFunction(controlNode.markup.type, controlNode.markup.props, controlNode.markup.children, controlNode.key, controlNode, parentVNode.ref || controlNode.markup.ref);
+            parentVNode.ref = controlNodeRef[4];
+            setEventFunction = VdomLib.Hooks.setEventHooks(environment);
+            controlNodeEventRef = setEventFunction(controlNode.markup.type, {
+                attributes: vNode.controlAttributes,
+                events: (controlNode.markup.hprops && controlNode.markup.hprops.events) || vNode.controlEvents
+            }, controlNode.markup.children, controlNode.key, controlNode, parentVNode.ref);
+            parentVNode.ref = controlNodeEventRef[4];
+            controlNode.fullMarkup = controlNode.markup;
+            vNode.instance = controlNode;
+            vNode.instance.parentDOM = parentDOM;
+            vNode.ref = parentVNode.ref;
+            mountRef(parentVNode.ref, parentVNode.dom || parentVNode.element || parentDOM, lifecycle);
+        }
+        else {
+            setHookFunction = VdomLib.Hooks.setControlNodeHook(controlNode);
+            if (controlNode.markup.ref && vNode.ref) {
+                var cnmRef$1 = controlNode.markup.ref;
+                controlNode.markup.ref = function (domNode) {
+                    cnmRef$1(domNode);
+                    vNode.ref(domNode);
+                };
+            }
+            controlNodeRef = setHookFunction(controlNode.markup.type, controlNode.markup.props, controlNode.markup.children, controlNode.key, controlNode, controlNode.markup.ref || vNode.ref);
+            controlNode.markup.ref = controlNodeRef[4];
+            setEventFunction = VdomLib.Hooks.setEventHooks(environment);
+            controlNodeEventRef = setEventFunction(controlNode.markup.type, {
+                attributes: vNode.controlAttributes,
+                events: (controlNode.markup.hprops && controlNode.markup.hprops.events) || vNode.controlEvents
+            }, controlNode.markup.children, controlNode.key, controlNode, controlNode.markup.ref);
+            vNode.instance = controlNode;
+            vNode.instance.parentDOM = parentDOM;
+            vNode.instance.markup.ref = controlNodeEventRef[4];
+        }
+    }
+    else {
+        vNode.instance = controlNode;
+        vNode.instance.parentDOM = parentDOM;
+    }
+    return vNode;
+}
+function mountWasabyControl(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
+    if (!environment.infernoQueue) {
+        environment.infernoQueue = [];
+    }
+    if (!environment.asyncRenderIds) {
+        environment.asyncRenderIds = {};
+    }
+    var VirtualNode = createWasabyControlInstance(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
+    if (parentVNode && parentVNode.controlClass) {
+        VirtualNode.sibling = parentVNode.sibling;
+    }
+    if (VirtualNode.carrier && VirtualNode.carrier.then) {
+        if (VirtualNode.instance.control && VirtualNode.instance.control._forceUpdate) {
+            environment.asyncRenderIds[VirtualNode.instance.id] = true;
+            VirtualNode.instance.control._forceUpdate = function (memo) {
+                // var lifecycle = [];
+                // @ts-ignore
+                if (memo === 'mount') {
+                    delete environment.asyncRenderIds[VirtualNode.instance.id];
+                    if (VirtualNode.compound || (VirtualNode.instance.markup && VirtualNode.instance.markup.type !== 'invisible-node')) {
+                        VirtualNode = setWasabyControlNodeHooks(VirtualNode.instance, VirtualNode, parentVNode, isRootStart, parentDOM, lifecycle, environment);
+                        if (VirtualNode.sibling) {
+                            if (VirtualNode.sibling.dom) {
+                                nextNode = VirtualNode.sibling.dom;
+                            }
+                            else {
+                                nextNode = VirtualNode.sibling;
+                            }
+                        }
+                        lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
+                        mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, VirtualNode);
+                        lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
+                    }
+                    if (Object.keys(environment.asyncRenderIds).length === 0) {
+                        if (lifecycle.length > 0) {
+                            var listener;
+                            while ((listener = lifecycle.shift()) !== undefined) {
+                                listener();
+                            }
+                        }
+                        if (lifecycle.mount.length > 0) {
+                            var listener$1;
+                            while ((listener$1 = lifecycle.mount.shift()) !== undefined) {
+                                listener$1();
+                            }
+                        }
+                    }
+                    if (environment.infernoQueue && Object.keys(environment.infernoQueue).length !== 0) {
+                        startQueue(environment.infernoQueue, environment);
+                    }
+                }
+                else {
+                    queueWasabyControlChanges(VirtualNode.instance, true);
+                }
+            };
+            VirtualNode.carrier.then(function (data) {
+                VirtualNode.instance.receivedState = data;
+                VirtualNode.carrier = undefined;
+                VirtualNode.instance.control._forceUpdate('mount');
+            }, function (error) {
+                console.log("MOUNT error: ", error, VirtualNode.instance.control._moduleName);
+            });
+        }
+    }
+    else {
+        var isInvisibleNode = VirtualNode.instance.markup && VirtualNode.instance.markup.type !== 'invisible-node';
+        if (VirtualNode.instance.control && VirtualNode.instance.control._forceUpdate) {
+            VirtualNode.instance.control._forceUpdate = function () {
+                queueWasabyControlChanges(VirtualNode.instance, true);
+            };
+        }
+        lifecycle.mount.push(beforeRenderCallback(VirtualNode.instance));
+        if (VirtualNode.compound || isInvisibleNode) {
+            mount(VirtualNode.instance.markup, parentDOM, {}, isSVG, nextNode, lifecycle, isRootStart, environment, VirtualNode.instance, vNode);
+        }
+        lifecycle.mount.push(mountWasabyCallback(VirtualNode.instance));
+    }
+}
+function getMarkupForTemplatedNode(vNode) {
+    return vNode.parentControl
+        ? vNode.template.call(vNode.parentControl, vNode.controlProperties, vNode.attributes, vNode.context, true)
+        : vNode.template(vNode.controlProperties, vNode.attributes, vNode.context, true);
+}
+// @ts-ignore
+function createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode) {
+    vNode.markup = getMarkupForTemplatedNode(vNode);
+    // check current context field versions
+    vNode.optionsVersions = collectObjectVersions(vNode.controlProperties);
+    // check current context field versions
+    vNode.contextVersions = collectObjectVersions(vNode.context);
+    vNode.markup.forEach(function (node) {
+        var nref = node.ref;
+        if (vNode.ref) {
+            node.ref = function (element) {
+                if (nref) {
+                    nref(element);
+                }
+                vNode.ref(element);
+            };
+        }
+        if (node.hprops) {
+            var setEventFunction = VdomLib.Hooks.setEventHooks(environment);
+            var templateNodeEventRef = setEventFunction(node.type, node.hprops, node.children, node.key, parentControlNode, node.ref);
+            node.ref = templateNodeEventRef[4];
+        }
+    });
+    vNode.childFlags = vNode.markup && vNode.markup.length ? vNode.key ? 8 : 4 : 0;
+    return vNode;
+}
+// @ts-ignore
+function mountWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
+    var yVNode = createWasabyTemplateNode(vNode, parentDOM, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode);
+    var lastChild;
+    if (vNode.sibling) {
+        if (yVNode.markup.length) {
+            lastChild = yVNode.markup[yVNode.markup.length - 1];
+            lastChild.sibling = vNode.sibling;
+        }
+        if (vNode.sibling.dom) {
+            nextNode = vNode.sibling.dom;
+        }
+    }
+    mountArrayChildren(yVNode.markup, parentDOM, {}, isSVG, nextNode, lifecycle, environment, parentControlNode);
 }
 function mountFunctionalComponent(vNode, parentDOM, context, isSVG, nextNode, lifecycle) {
     var type = vNode.type;
@@ -1603,20 +2673,36 @@ function mountFunctionalComponentCallbacks(props, ref, vNode, lifecycle) {
     }
 }
 
-function replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle) {
+function replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
     unmount(lastVNode);
     if ((nextVNode.flags & lastVNode.flags & 2033 /* DOMRef */) !== 0) {
+        // If we have controlNode, that starts not at the root HTMLElement and markup of this node is not the same
+        // as current dom, we have to remove current dom entirely and insert next markup in DOM
+        if (parentDOM.tagName === 'HTML' && nextVNode.type === 'html') {
+            mount(nextVNode, parentDOM, context, isSVG, null, lifecycle, true, environment, parentControlNode, nextVNode);
+        }
+        else if (isRootStart && lastVNode.dom === parentDOM) {
+            mount(nextVNode, parentDOM, context, isSVG, null, lifecycle, true, environment, parentControlNode, nextVNode);
+            if (parentDOM.parentNode) {
+                // @ts-ignore
+                removeVNodeDOM(lastVNode, parentDOM.parentNode);
+            }
+        }
+        else {
+            // Single DOM operation, when we have dom references available
+            mount(nextVNode, null, context, isSVG, null, lifecycle, false, environment, parentControlNode, nextVNode);
+        }
         // Single DOM operation, when we have dom references available
-        mount(nextVNode, null, context, isSVG, null, lifecycle);
-        // Single DOM operation, when we have dom references available
-        replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
+        if (parentDOM !== nextVNode.dom) {
+            replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
+        }
     }
     else {
-        mount(nextVNode, parentDOM, context, isSVG, findDOMfromVNode(lastVNode, true), lifecycle);
+        mount(nextVNode, parentDOM, context, isSVG, lastVNode.sibling || null, lifecycle, false, environment, parentControlNode, parentVNode);
         removeVNodeDOM(lastVNode, parentDOM);
     }
 }
-function patch(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecycle) {
+function patch$1(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecycle, isRootStart, environment, parentControlNode, parentVNode) {
     var nextFlags = (nextVNode.flags |= 16384 /* InUse */);
     {
         if (isFunction(options.componentComparator) && lastVNode.flags & nextFlags & 4 /* ComponentClass */) {
@@ -1626,9 +2712,10 @@ function patch(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecy
             }
         }
     }
-    if (lastVNode.flags !== nextFlags || lastVNode.type !== nextVNode.type || lastVNode.key !== nextVNode.key || (nextFlags & 2048 /* ReCreate */) !== 0) {
+    // @ts-ignore
+    if (lastVNode.flags !== nextFlags || lastVNode.type !== nextVNode.type || lastVNode.key !== nextVNode.key || (nextFlags & 2048 /* ReCreate */) !== 0 || lastVNode.controlClass !== nextVNode.controlClass) {
         if (lastVNode.flags & 16384 /* InUse */) {
-            replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle);
+            replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, isRootStart, environment, parentControlNode, parentVNode);
         }
         else {
             var dom = lastVNode.dom;
@@ -1648,12 +2735,15 @@ function patch(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecy
                 }
                 nextVNode.dom = dom;
             }
-            // Last vNode is not in use, it has crashed at application level. Just mount nextVNode and ignore last one
-            mount(nextVNode, parentDOM, context, isSVG, nextNode, lifecycle);
+            // Async nodes will be mounted if from another point. TODO: bad code, have to rewrite.
+            if (!environment.asyncRenderIds[parentControlNode.id]) {
+                // Last vNode is not in use, it has crashed at application level. Just mount nextVNode and ignore last one
+                mount(nextVNode, parentDOM, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNode);
+            }
         }
     }
     else if (nextFlags & 481 /* Element */) {
-        patchElement(lastVNode, nextVNode, context, isSVG, nextFlags, lifecycle);
+        patchElement(lastVNode, nextVNode, context, isSVG, nextFlags, lifecycle, environment, parentControlNode);
     }
     else if (nextFlags & 4 /* ComponentClass */) {
         patchClassComponent(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecycle);
@@ -1662,7 +2752,7 @@ function patch(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecy
         patchFunctionalComponent(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecycle);
     }
     else if (nextFlags & 16 /* Text */) {
-        patchText(lastVNode, nextVNode);
+        patchText(lastVNode, nextVNode, parentDOM);
     }
     else if (nextFlags & 512 /* Void */) {
         nextVNode.dom = lastVNode.dom;
@@ -1671,7 +2761,14 @@ function patch(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecy
         patchFragment(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle);
         // @ts-ignore
     }
-    else if (nextVNode instanceof RawMarkupNode) {
+    else if (nextFlags & 131072 /* WasabyControl */) {
+        patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode, parentVNode);
+        // @ts-ignore
+    }
+    else if (nextFlags & 262144 /* TemplateWasabyNode */) {
+        patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, nextNode, environment, parentControlNode);
+    }
+    else if (nextVNode instanceof ExpressionsLib.RawMarkupNode) {
         patchHTML(lastVNode, nextVNode, parentDOM);
     }
     else {
@@ -1679,8 +2776,7 @@ function patch(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecy
     }
 }
 function patchHTML(lastVNode, nextVNode, parentDOM) {
-    // @ts-ignore
-    if (nextVNode instanceof RawMarkupNode) {
+    if (nextVNode instanceof ExpressionsLib.RawMarkupNode) {
         if (lastVNode.markup !== nextVNode.markup) {
             parentDOM.innerHTML = nextVNode.markup;
         }
@@ -1722,7 +2818,7 @@ function patchPortal(lastVNode, nextVNode, context, lifecycle) {
         appendChild(nextContainer, node);
     }
 }
-function patchElement(lastVNode, nextVNode, context, isSVG, nextFlags, lifecycle) {
+function patchElement(lastVNode, nextVNode, context, isSVG, nextFlags, lifecycle, environment, parentControlNode) {
     var dom = lastVNode.dom;
     var lastProps = lastVNode.props;
     var nextProps = nextVNode.props;
@@ -1732,6 +2828,11 @@ function patchElement(lastVNode, nextVNode, context, isSVG, nextFlags, lifecycle
     nextVNode.dom = dom;
     isSVG = isSVG || (nextFlags & 32 /* SvgElement */) > 0;
     // inlined patchProps  -- starts --
+    if (nextVNode.hprops && nextVNode.hprops.events && Object.keys(nextVNode.hprops.events).length > 0) {
+        var setEventFunction = VdomLib.Hooks.setEventHooks(environment);
+        var templateNodeEventRef = setEventFunction(nextVNode.type, nextVNode.hprops, nextVNode.children, nextVNode.key, parentControlNode, nextVNode.ref);
+        nextVNode.ref = templateNodeEventRef[4];
+    }
     if (lastProps !== nextProps) {
         var lastPropsOrEmpty = lastProps || EMPTY_OBJ;
         nextPropsOrEmpty = nextProps || EMPTY_OBJ;
@@ -1756,6 +2857,7 @@ function patchElement(lastVNode, nextVNode, context, isSVG, nextFlags, lifecycle
             }
         }
     }
+    appendForFocuses(nextVNode, environment);
     var nextChildren = nextVNode.children;
     var nextClassName = nextVNode.className;
     // inlined patchProps  -- ends --
@@ -1777,7 +2879,7 @@ function patchElement(lastVNode, nextVNode, context, isSVG, nextFlags, lifecycle
         patchContentEditableChildren(dom, nextChildren);
     }
     else {
-        patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.children, nextChildren, dom, context, isSVG && nextVNode.type !== 'foreignObject', null, lastVNode, lifecycle);
+        patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.children, nextChildren, dom, context, isSVG && nextVNode.type !== 'foreignObject', null, lastVNode, lifecycle, environment, parentControlNode, nextVNode);
     }
     if (isFormElement) {
         processElement(nextFlags, nextVNode, dom, nextPropsOrEmpty, false, hasControlledValue);
@@ -1787,6 +2889,7 @@ function patchElement(lastVNode, nextVNode, context, isSVG, nextFlags, lifecycle
     if (lastRef !== nextRef) {
         unmountRef(lastRef);
         mountRef(nextRef, dom, lifecycle);
+        appendForFocuses(nextVNode, environment);
     }
 }
 function replaceOneVNodeWithMultipleVNodes(lastChildren, nextChildren, parentDOM, context, isSVG, lifecycle) {
@@ -1794,12 +2897,12 @@ function replaceOneVNodeWithMultipleVNodes(lastChildren, nextChildren, parentDOM
     mountArrayChildren(nextChildren, parentDOM, context, isSVG, findDOMfromVNode(lastChildren, true), lifecycle);
     removeVNodeDOM(lastChildren, parentDOM);
 }
-function patchChildren(lastChildFlags, nextChildFlags, lastChildren, nextChildren, parentDOM, context, isSVG, nextNode, parentVNode, lifecycle) {
+function patchChildren(lastChildFlags, nextChildFlags, lastChildren, nextChildren, parentDOM, context, isSVG, nextNode, parentVNode, lifecycle, environment, parentControlNode, parentVNodeW) {
     switch (lastChildFlags) {
         case 2 /* HasVNodeChildren */:
             switch (nextChildFlags) {
                 case 2 /* HasVNodeChildren */:
-                    patch(lastChildren, nextChildren, parentDOM, context, isSVG, nextNode, lifecycle);
+                    patch$1(lastChildren, nextChildren, parentDOM, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNodeW);
                     break;
                 case 1 /* HasInvalidChildren */:
                     remove(lastChildren, parentDOM);
@@ -1816,7 +2919,7 @@ function patchChildren(lastChildFlags, nextChildFlags, lastChildren, nextChildre
         case 1 /* HasInvalidChildren */:
             switch (nextChildFlags) {
                 case 2 /* HasVNodeChildren */:
-                    mount(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle);
+                    mount(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
                     break;
                 case 1 /* HasInvalidChildren */:
                     break;
@@ -1824,7 +2927,7 @@ function patchChildren(lastChildFlags, nextChildFlags, lastChildren, nextChildre
                     mountTextContent(parentDOM, nextChildren);
                     break;
                 default:
-                    mountArrayChildren(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle);
+                    mountArrayChildren(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
                     break;
             }
             break;
@@ -1835,14 +2938,14 @@ function patchChildren(lastChildFlags, nextChildFlags, lastChildren, nextChildre
                     break;
                 case 2 /* HasVNodeChildren */:
                     clearDOM(parentDOM);
-                    mount(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle);
+                    mount(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
                     break;
                 case 1 /* HasInvalidChildren */:
                     clearDOM(parentDOM);
                     break;
                 default:
                     clearDOM(parentDOM);
-                    mountArrayChildren(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle);
+                    mountArrayChildren(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
                     break;
             }
             break;
@@ -1854,7 +2957,7 @@ function patchChildren(lastChildFlags, nextChildFlags, lastChildren, nextChildre
                     break;
                 case 2 /* HasVNodeChildren */:
                     removeAllChildren(parentDOM, parentVNode, lastChildren);
-                    mount(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle);
+                    mount(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
                     break;
                 case 1 /* HasInvalidChildren */:
                     removeAllChildren(parentDOM, parentVNode, lastChildren);
@@ -1865,21 +2968,83 @@ function patchChildren(lastChildFlags, nextChildFlags, lastChildren, nextChildre
                     // Fast path's for both algorithms
                     if (lastLength === 0) {
                         if (nextLength > 0) {
-                            mountArrayChildren(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle);
+                            mountArrayChildren(nextChildren, parentDOM, context, isSVG, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
                         }
                     }
                     else if (nextLength === 0) {
                         removeAllChildren(parentDOM, parentVNode, lastChildren);
                     }
                     else if (nextChildFlags === 8 /* HasKeyedChildren */ && lastChildFlags === 8 /* HasKeyedChildren */) {
-                        patchKeyedChildren(lastChildren, nextChildren, parentDOM, context, isSVG, lastLength, nextLength, nextNode, parentVNode, lifecycle);
+                        patchKeyedChildren(lastChildren, nextChildren, parentDOM, context, isSVG, lastLength, nextLength, nextNode, parentVNode, lifecycle, environment, parentControlNode, parentVNodeW);
                     }
                     else {
-                        patchNonKeyedChildren(lastChildren, nextChildren, parentDOM, context, isSVG, lastLength, nextLength, nextNode, lifecycle);
+                        patchNonKeyedChildren(lastChildren, nextChildren, parentDOM, context, isSVG, lastLength, nextLength, nextNode, lifecycle, environment, parentControlNode, parentVNodeW);
                     }
                     break;
             }
             break;
+    }
+}
+// @ts-ignore
+function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, nN, environment, parentControlNode) {
+    var nextNode = nN || null;
+    // @ts-ignore
+    nextVNode.optionsVersions = collectObjectVersions(nextVNode.controlProperties); // check current context field versions
+    // check current context field versions
+    nextVNode.contextVersions = collectObjectVersions(nextVNode.context);
+    var changedOptions = VdomLib.getChangedOptions(nextVNode.controlProperties, lastVNode.controlProperties, false, lastVNode.optionsVersions);
+    var oldAttrs = lastVNode.attributes.attributes;
+    var newAttrs = nextVNode.attributes.attributes;
+    var changedAttrs = VdomLib.getChangedOptions(newAttrs, oldAttrs, false, {});
+    var changedTemplate = lastVNode.template !== nextVNode.template;
+    var nextInput;
+    nextVNode.childFlags = nextVNode.markup && nextVNode.markup.length ? nextVNode.key ? 8 : 4 : 0;
+    if (!nextVNode.hasOwnProperty('sibling')) {
+        if (lastVNode.sibling && lastVNode.sibling.dom) {
+            var docContains = false;
+            // @ts-ignore
+            if (Env.detection.isIE) {
+                // IE document api does not treat document as any HTML NODE Element, so we have to 
+                // take that method call to body
+                docContains = document.body.contains(lastVNode.sibling.dom);
+            }
+            else {
+                docContains = document.contains(lastVNode.sibling.dom);
+            }
+            if (docContains) {
+                nextVNode.sibling = lastVNode.sibling;
+            }
+        }
+    }
+    if (changedOptions || changedAttrs || changedTemplate) {
+        //    Logger.log('DirtyChecking (update template with changed options)', ['', '', changedOptions]);
+        nextInput = getMarkupForTemplatedNode(nextVNode);
+        nextInput.forEach(function (node) {
+            var nref = node.ref;
+            if (nextVNode.ref) {
+                node.ref = function (element) {
+                    nref(element);
+                    nextVNode.ref(element);
+                };
+            }
+            if (node.hprops) {
+                var setEventFunction = VdomLib.Hooks.setEventHooks(environment);
+                var templateNodeEventRef = setEventFunction(node.type, node.hprops, node.children, node.key, parentControlNode, node.ref);
+                node.ref = templateNodeEventRef[4];
+            }
+        });
+        lastVNode.childFlags = lastVNode.markup && lastVNode.markup.length ? lastVNode.key ? 8 : 4 : 0;
+        nextVNode.childFlags = nextInput && nextInput.length ? nextVNode.key ? 8 : 4 : 0;
+        if (nextVNode.sibling) {
+            if (nextVNode.sibling.dom) {
+                nextNode = nextVNode.sibling.dom;
+            }
+        }
+        patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.markup, nextInput, parentDOM, {}, isSVG, nextNode || lastVNode.sibling || null, lastVNode, lifecycle, environment, parentControlNode);
+        nextVNode.markup = nextInput;
+    }
+    else {
+        nextVNode.markup = lastVNode.markup;
     }
 }
 function createDidUpdate(instance, lastProps, lastState, snapshot, lifecycle) {
@@ -1907,7 +3072,7 @@ function updateClassComponent(instance, nextState, nextProps, parentDOM, context
         if (usesNewAPI && isFunction(instance.getSnapshotBeforeUpdate)) {
             snapshot = instance.getSnapshotBeforeUpdate(lastProps, lastState);
         }
-        patch(instance.$LI, nextInput, parentDOM, instance.$CX, isSVG, nextNode, lifecycle);
+        patch$1(instance.$LI, nextInput, parentDOM, instance.$CX, isSVG, nextNode, lifecycle);
         // Dont update Last input, until patch has been succesfully executed
         instance.$LI = nextInput;
         if (isFunction(instance.componentDidUpdate)) {
@@ -1954,6 +3119,193 @@ function patchClassComponent(lastVNode, nextVNode, parentDOM, context, isSVG, ne
     }
     instance.$UPD = false;
 }
+// @ts-ignore
+function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode, parentVNode) {
+    // для не-compound контролов делаем проверку изменения служебных опций
+    var changedInternalOptions = VdomLib.getChangedOptions(nextVNode.controlInternalProperties, lastVNode.internalOptions);
+    // Атрибуты тоже учавствуют в DirtyChecking
+    var changedOptions = VdomLib.getChangedOptions(nextVNode.controlProperties, lastVNode.controlProperties, nextVNode.compound, lastVNode.instance.optionsVersions);
+    var changedContext = VdomLib.getChangedOptions(nextVNode.context, lastVNode.instance.context, false, lastVNode.instance.contextVersions);
+    var oldOptions = lastVNode.instance.options;
+    var oldAttrs = lastVNode.controlAttributes || lastVNode.instance.attributes;
+    var changedAttrs = VdomLib.getChangedOptions(nextVNode.controlAttributes, oldAttrs, nextVNode.compound);
+    var childControlNode = lastVNode.instance;
+    var childControl = childControlNode.control;
+    environment = lastVNode.instance.environment;
+    // @ts-ignore
+    var shouldUpdate = true;
+    var oldChildNodeContext = lastVNode.instance.context;
+    var newChildNodeContext = nextVNode.context || {};
+    // @ts-ignore
+    var beforeUpdateResults;
+    var newOptions = nextVNode.compound ?
+        ViewUtilsLib.Compatible.createCombinedOptions(nextVNode.controlProperties, nextVNode.controlInternalProperties)
+        : nextVNode.controlProperties;
+    if (lastVNode.carrier) {
+        lastVNode.carrier.then(function () {
+            // Атрибуты тоже учавствуют в DirtyChecking
+            if (changedOptions || changedInternalOptions || changedAttrs || changedContext) {
+                if (!nextVNode.compound) {
+                    try {
+                        var resolvedContext;
+                        //  Logger.log('DirtyChecking (update node with changed)', [
+                        //      '',
+                        //      '',
+                        //      changedOptions || changedInternalOptions || changedAttrs || changedContext
+                        //  ]);
+                        environment.setRebuildIgnoreId(childControlNode.id);
+                        ViewUtilsLib.OptionsResolver.resolveInheritOptions(childControlNode.controlClass, childControlNode, newOptions);
+                        childControl.saveInheritOptions(childControlNode.inheritOptions);
+                        resolvedContext = ExpressionsLib.ContextResolver.resolveContext(childControlNode.controlClass, newChildNodeContext, childControlNode.control);
+                        ViewUtilsLib.OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, parentControlNode.control._moduleName);
+                        // Forbid force update in the time between _beforeUpdate and _afterUpdate
+                        // @ts-ignore
+                        ReactiveObserver.pauseReactive(childControl, function () {
+                            // Forbid force update in the time between _beforeUpdate and _afterUpdate
+                            beforeUpdateResults = childControl._beforeUpdate && childControl.__beforeUpdate(newOptions, resolvedContext);
+                        });
+                        childControl._options = newOptions;
+                        shouldUpdate = (childControl._shouldUpdate ? childControl._shouldUpdate(newOptions, resolvedContext) : true) || changedInternalOptions;
+                        childControl._setInternalOptions(changedInternalOptions || {});
+                        childControlNode.oldOptions = oldOptions; // TODO Для afterUpdate подумать, как еще можно передать
+                        // TODO Для afterUpdate подумать, как еще можно передать
+                        childControlNode.oldContext = oldChildNodeContext; // TODO Для afterUpdate подумать, как еще можно передать
+                        // TODO Для afterUpdate подумать, как еще можно передать
+                        childControlNode.attributes = nextVNode.controlAttributes;
+                        childControlNode.events = nextVNode.controlEvents;
+                        childControl._saveContextObject(resolvedContext);
+                        childControl.saveFullContext(ExpressionsLib.ContextResolver.wrapContext(childControl, childControl._context));
+                    }
+                    finally {
+                        /**
+                         * TODO: удалить после синхронизации с контролами
+                         */
+                        var shouldUp = childControl._shouldUpdate ? childControl._shouldUpdate(newOptions, newChildNodeContext) || changedInternalOptions : true;
+                        childControl._setInternalOptions(changedInternalOptions || {});
+                        if (shouldUp) {
+                            environment.setRebuildIgnoreId(null);
+                        }
+                        childControlNode.options = newOptions;
+                        childControlNode.context = newChildNodeContext;
+                        if (!nextVNode.compound) {
+                            childControlNode.internalOptions = nextVNode.controlInternalProperties;
+                        }
+                    }
+                    childControlNode.control.saveFullContext(ExpressionsLib.ContextResolver.wrapContext(childControlNode.control, childControlNode.context || {}));
+                    var nextInput = getDecoratedMarkup(childControlNode, false);
+                    nextVNode.instance = childControlNode;
+                    nextInput.ref = nextVNode.instance.markup.ref;
+                    var setEventFunction = VdomLib.Hooks.setEventHooks(environment);
+                    var controlNodeEventRef = setEventFunction(childControlNode.markup.type, {
+                        attributes: nextVNode.controlAttributes,
+                        events: (childControlNode.markup.hprops && childControlNode.markup.hprops.events) || nextVNode.controlEvents
+                    }, childControlNode.markup.children, childControlNode.key, childControlNode, childControlNode.markup.ref);
+                    nextVNode.instance.markup.ref = controlNodeEventRef[4];
+                    lifecycle.mount.push(beforeRenderCallback(childControlNode));
+                    patch$1(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextInput.dom, lifecycle, false, environment, nextVNode.instance, nextInput);
+                    nextVNode.instance.markup = nextInput;
+                    lifecycle.mount.push(mountWasabyCallback(childControlNode));
+                }
+                else {
+                    if (changedOptions) {
+                        childControl.setProperties(changedOptions);
+                        childControlNode.options = childControl._options;
+                    }
+                    nextVNode.instance = childControlNode;
+                }
+            }
+            else {
+                nextVNode.instance = lastVNode.instance;
+            }
+            if (lastVNode.instance.markup && lastVNode.instance.markup.type === 'invisible-node') {
+                if (lastVNode.ref) {
+                    parentVNode.ref = lastVNode.ref;
+                }
+            }
+            startQueue(nextVNode.environment.infernoQueue, nextVNode.environment);
+        });
+    }
+    else {
+        if (changedOptions || changedInternalOptions || changedAttrs || changedContext) {
+            if (!nextVNode.compound) {
+                try {
+                    var resolvedContext;
+                    //  Logger.log('DirtyChecking (update node with changed)', [
+                    //      '',
+                    //      '',
+                    //      changedOptions || changedInternalOptions || changedAttrs || changedContext
+                    //  ]);
+                    environment.setRebuildIgnoreId(childControlNode.id);
+                    ViewUtilsLib.OptionsResolver.resolveInheritOptions(childControlNode.controlClass, childControlNode, newOptions);
+                    childControl.saveInheritOptions(childControlNode.inheritOptions);
+                    resolvedContext = ExpressionsLib.ContextResolver.resolveContext(childControlNode.controlClass, newChildNodeContext, childControlNode.control);
+                    ViewUtilsLib.OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, parentControlNode.control._moduleName);
+                    // Forbid force update in the time between _beforeUpdate and _afterUpdate
+                    // @ts-ignore
+                    ReactiveObserver.pauseReactive(childControl, function () {
+                        // Forbid force update in the time between _beforeUpdate and _afterUpdate
+                        beforeUpdateResults = childControl._beforeUpdate && childControl.__beforeUpdate(newOptions, resolvedContext);
+                    });
+                    childControl._options = newOptions;
+                    shouldUpdate = (childControl._shouldUpdate ? childControl._shouldUpdate(newOptions, resolvedContext) : true) || changedInternalOptions;
+                    childControl._setInternalOptions(changedInternalOptions || {});
+                    childControlNode.oldOptions = oldOptions; // TODO Для afterUpdate подумать, как еще можно передать
+                    // TODO Для afterUpdate подумать, как еще можно передать
+                    childControlNode.oldContext = oldChildNodeContext; // TODO Для afterUpdate подумать, как еще можно передать
+                    // TODO Для afterUpdate подумать, как еще можно передать
+                    childControlNode.attributes = nextVNode.controlAttributes;
+                    childControlNode.events = nextVNode.controlEvents;
+                    childControl._saveContextObject(resolvedContext);
+                    childControl.saveFullContext(ExpressionsLib.ContextResolver.wrapContext(childControl, childControl._context));
+                }
+                finally {
+                    /**
+                     * TODO: удалить после синхронизации с контролами
+                     */
+                    var shouldUp = childControl._shouldUpdate ? childControl._shouldUpdate(newOptions, newChildNodeContext) || changedInternalOptions : true;
+                    childControl._setInternalOptions(changedInternalOptions || {});
+                    if (shouldUp) {
+                        environment.setRebuildIgnoreId(null);
+                    }
+                    childControlNode.options = newOptions;
+                    childControlNode.context = newChildNodeContext;
+                    if (!nextVNode.compound) {
+                        childControlNode.internalOptions = nextVNode.controlInternalProperties;
+                    }
+                }
+                childControlNode.control.saveFullContext(ExpressionsLib.ContextResolver.wrapContext(childControlNode.control, childControlNode.context || {}));
+                var nextInput = getDecoratedMarkup(childControlNode, false);
+                nextVNode.instance = childControlNode;
+                nextInput.ref = nextVNode.instance.markup.ref;
+                var setEventFunction = VdomLib.Hooks.setEventHooks(environment);
+                var controlNodeEventRef = setEventFunction(childControlNode.markup.type, {
+                    attributes: nextVNode.controlAttributes,
+                    events: (childControlNode.markup.hprops && childControlNode.markup.hprops.events) || nextVNode.controlEvents
+                }, childControlNode.markup.children, childControlNode.key, childControlNode, childControlNode.markup.ref);
+                nextVNode.instance.markup.ref = controlNodeEventRef[4];
+                lifecycle.mount.push(beforeRenderCallback(childControlNode));
+                patch$1(lastVNode.instance.markup, nextInput, parentDOM, {}, isSVG, nextInput.dom, lifecycle, false, environment, nextVNode.instance, nextInput);
+                nextVNode.instance.markup = nextInput;
+                lifecycle.mount.push(mountWasabyCallback(childControlNode));
+            }
+            else {
+                if (changedOptions) {
+                    childControl.setProperties(changedOptions);
+                    childControlNode.options = childControl._options;
+                }
+                nextVNode.instance = childControlNode;
+            }
+        }
+        else {
+            nextVNode.instance = lastVNode.instance;
+        }
+        if (lastVNode.instance.markup && lastVNode.instance.markup.type === 'invisible-node') {
+            if (lastVNode.ref) {
+                parentVNode.ref = lastVNode.ref;
+            }
+        }
+    }
+}
 function patchFunctionalComponent(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecycle) {
     var shouldUpdate = true;
     var nextProps = nextVNode.props || EMPTY_OBJ;
@@ -1969,7 +3321,7 @@ function patchFunctionalComponent(lastVNode, nextVNode, parentDOM, context, isSV
             nextRef.onComponentWillUpdate(lastProps, nextProps);
         }
         var nextInput = handleComponentInput(nextVNode.type(nextProps, context));
-        patch(lastInput, nextInput, parentDOM, context, isSVG, nextNode, lifecycle);
+        patch$1(lastInput, nextInput, parentDOM, context, isSVG, nextNode, lifecycle);
         nextVNode.children = nextInput;
         if (nextHooksDefined && isFunction(nextRef.onComponentDidUpdate)) {
             nextRef.onComponentDidUpdate(lastProps, nextProps);
@@ -1979,24 +3331,34 @@ function patchFunctionalComponent(lastVNode, nextVNode, parentDOM, context, isSV
         nextVNode.children = lastInput;
     }
 }
-function patchText(lastVNode, nextVNode) {
+// @ts-ignore
+var ie10or11 = Env.detection.isIE10 || Env.detection.isIE11;
+function patchText(lastVNode, nextVNode, parentDOM) {
     var nextText = unescape(nextVNode.children);
     var dom = lastVNode.dom;
-    if (nextText !== lastVNode.children) {
+    if (nextText !== lastVNode.children && lastVNode.children !== nextVNode.children) {
         // inner text has to be just for IE 10 and for EmptyTextNode
         // EmptyTextNode - implementation of empty string value
         // You can't set nodeValue property in EmptyTextNode
-        // @ts-ignore
-        if (detection.isIE10) {
+        if (ie10or11) {
             if (dom && dom.parentNode) {
                 // @ts-ignore
-                if (detection.isIE10 || dom.nodeValue === '') {
+                var parentChildNodesLength = dom.parentNode.childNodes && dom.parentNode.childNodes.length === 1;
+                // We have to use innerText property only in the case when childNodes length of DOMNode are
+                // equal to 1, cause if don't do that, we will be in the situation of the whole parentNode
+                // childs removed
+                // @ts-ignore
+                if ((Env.detection.isIE10 || dom.nodeValue === '') && parentChildNodesLength) {
                     // @ts-ignore
                     dom.parentNode.innerText = nextText;
                 }
                 else {
                     dom.nodeValue = nextText;
                 }
+            }
+            else {
+                // @ts-ignore
+                parentDOM.innerText = nextText;
             }
         }
         else {
@@ -2005,7 +3367,13 @@ function patchText(lastVNode, nextVNode) {
     }
     nextVNode.dom = dom;
 }
-function patchNonKeyedChildren(lastChildren, nextChildren, dom, context, isSVG, lastChildrenLength, nextChildrenLength, nextNode, lifecycle) {
+function patchNonKeyedChildren(lastChildren, nextChildren, dom, context, isSVG, lastChildrenLength, nextChildrenLength, nextNode, lifecycle, 
+// @ts-ignore
+environment, 
+// @ts-ignore
+parentControlNode, 
+// @ts-ignore
+parentVNodeW) {
     var commonLength = lastChildrenLength > nextChildrenLength ? nextChildrenLength : lastChildrenLength;
     var i = 0;
     var nextChild;
@@ -2016,7 +3384,7 @@ function patchNonKeyedChildren(lastChildren, nextChildren, dom, context, isSVG, 
         if (nextChild.flags & 16384 /* InUse */) {
             nextChild = nextChildren[i] = directClone(nextChild);
         }
-        patch(lastChild, nextChild, dom, context, isSVG, nextNode, lifecycle);
+        patch$1(lastChild, nextChild, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNodeW);
         lastChildren[i] = nextChild;
     }
     if (lastChildrenLength < nextChildrenLength) {
@@ -2025,7 +3393,7 @@ function patchNonKeyedChildren(lastChildren, nextChildren, dom, context, isSVG, 
             if (nextChild.flags & 16384 /* InUse */) {
                 nextChild = nextChildren[i] = directClone(nextChild);
             }
-            mount(nextChild, dom, context, isSVG, nextNode, lifecycle);
+            mount(nextChild, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNodeW);
         }
     }
     else if (lastChildrenLength > nextChildrenLength) {
@@ -2034,7 +3402,7 @@ function patchNonKeyedChildren(lastChildren, nextChildren, dom, context, isSVG, 
         }
     }
 }
-function patchKeyedChildren(a, b, dom, context, isSVG, aLength, bLength, outerEdge, parentVNode, lifecycle) {
+function patchKeyedChildren(a, b, dom, context, isSVG, aLength, bLength, outerEdge, parentVNode, lifecycle, environment, parentControlNode, parentVNodeW) {
     var aEnd = aLength - 1;
     var bEnd = bLength - 1;
     var i = 0;
@@ -2051,7 +3419,15 @@ function patchKeyedChildren(a, b, dom, context, isSVG, aLength, bLength, outerEd
             if (bNode.flags & 16384 /* InUse */) {
                 b[j] = bNode = directClone(bNode);
             }
-            patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle);
+            // @ts-ignore
+            if (bNode.controlClass || bNode.template) {
+                // @ts-ignore
+                if (!bNode.sibling && b[j + 1]) {
+                    // @ts-ignore
+                    bNode.sibling = b[j + 1];
+                }
+            }
+            patch$1(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
             a[j] = bNode;
             ++j;
             if (j > aEnd || j > bEnd) {
@@ -2067,7 +3443,15 @@ function patchKeyedChildren(a, b, dom, context, isSVG, aLength, bLength, outerEd
             if (bNode.flags & 16384 /* InUse */) {
                 b[bEnd] = bNode = directClone(bNode);
             }
-            patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle);
+            // @ts-ignore
+            if (bNode.controlClass || bNode.template) {
+                // @ts-ignore
+                if (!bNode.sibling && b[j - 1]) {
+                    // @ts-ignore
+                    bNode.sibling = b[j - 1];
+                }
+            }
+            patch$1(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
             a[aEnd] = bNode;
             aEnd--;
             bEnd--;
@@ -2088,7 +3472,7 @@ function patchKeyedChildren(a, b, dom, context, isSVG, aLength, bLength, outerEd
                     b[j] = bNode = directClone(bNode);
                 }
                 ++j;
-                mount(bNode, dom, context, isSVG, nextNode, lifecycle);
+                mount(bNode, dom, context, isSVG, nextNode, lifecycle, false, environment, parentControlNode, parentVNodeW);
             }
         }
     }
@@ -2135,7 +3519,7 @@ function patchKeyedChildren(a, b, dom, context, isSVG, aLength, bLength, outerEd
                             if (bNode.flags & 16384 /* InUse */) {
                                 b[j] = bNode = directClone(bNode);
                             }
-                            patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle);
+                            patch$1(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
                             ++patched;
                             break;
                         }
@@ -2178,7 +3562,7 @@ function patchKeyedChildren(a, b, dom, context, isSVG, aLength, bLength, outerEd
                         if (bNode.flags & 16384 /* InUse */) {
                             b[j] = bNode = directClone(bNode);
                         }
-                        patch(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle);
+                        patch$1(aNode, bNode, dom, context, isSVG, outerEdge, lifecycle, false, environment, parentControlNode, parentVNodeW);
                         ++patched;
                     }
                     else if (!canRemoveWholeContent) {
@@ -2193,7 +3577,7 @@ function patchKeyedChildren(a, b, dom, context, isSVG, aLength, bLength, outerEd
         // fast-path: if nothing patched remove all old and add all new
         if (canRemoveWholeContent) {
             removeAllChildren(dom, parentVNode, a);
-            mountArrayChildren(b, dom, context, isSVG, outerEdge, lifecycle);
+            mountArrayChildren(b, dom, context, isSVG, outerEdge, lifecycle, environment, parentControlNode, parentVNodeW);
         }
         else if (moved) {
             var seq = lis_algorithm(sources);
@@ -2206,7 +3590,7 @@ function patchKeyedChildren(a, b, dom, context, isSVG, aLength, bLength, outerEd
                         b[pos] = bNode = directClone(bNode);
                     }
                     nextPos = pos + 1;
-                    mount(bNode, dom, context, isSVG, nextPos < bLength ? findDOMfromVNode(b[nextPos], true) : outerEdge, lifecycle);
+                    mount(bNode, dom, context, isSVG, nextPos < bLength ? findDOMfromVNode(b[nextPos], true) : outerEdge, lifecycle, false, environment, parentControlNode, parentVNode);
                 }
                 else if (j < 0 || i !== seq[j]) {
                     pos = i + bStart;
@@ -2230,7 +3614,7 @@ function patchKeyedChildren(a, b, dom, context, isSVG, aLength, bLength, outerEd
                         b[pos] = bNode = directClone(bNode);
                     }
                     nextPos = pos + 1;
-                    mount(bNode, dom, context, isSVG, nextPos < bLength ? findDOMfromVNode(b[nextPos], true) : outerEdge, lifecycle);
+                    mount(bNode, dom, context, isSVG, nextPos < bLength ? findDOMfromVNode(b[nextPos], true) : outerEdge, lifecycle, false /* isRootStart */, environment, parentControlNode, parentVNodeW);
                 }
             }
         }
@@ -2292,14 +3676,16 @@ var hasDocumentAvailable = typeof document !== 'undefined';
 var documentBody = null;
 if (hasDocumentAvailable) {
     documentBody = document.body;
-    /*
-     * Defining $EV and $V properties on Node.prototype
-     * fixes v8 "wrong map" de-optimization
-     */
-    Node.prototype.$EV = null;
-    Node.prototype.$V = null;
+    if (typeof Node !== 'undefined') {
+        /*
+        * Defining $EV and $V properties on Node.prototype
+        * fixes v8 "wrong map" de-optimization
+        */
+        Node.prototype.$EV = null;
+        Node.prototype.$V = null;
+    }
 }
-function __render(input, parentDOM, callback, context, isRootStart) {
+function __render(input, parentDOM, callback, context, isRootStart, environment, parentControlNode) {
     // Development warning
     {
         if (documentBody === parentDOM) {
@@ -2310,13 +3696,15 @@ function __render(input, parentDOM, callback, context, isRootStart) {
         }
     }
     var lifecycle = [];
+    // @ts-ignore
+    lifecycle.mount = [];
     var rootInput = parentDOM.$V;
     if (isNullOrUndef(rootInput)) {
         if (!isNullOrUndef(input)) {
             if (input.flags & 16384 /* InUse */) {
                 input = directClone(input);
             }
-            mount(input, parentDOM, context, false, null, lifecycle, isRootStart);
+            mount(input, parentDOM, context, false, null, lifecycle, isRootStart, environment, parentControlNode);
             parentDOM.$V = input;
             rootInput = input;
         }
@@ -2330,25 +3718,33 @@ function __render(input, parentDOM, callback, context, isRootStart) {
             if (input.flags & 16384 /* InUse */) {
                 input = directClone(input);
             }
-            patch(rootInput, input, parentDOM, context, false, null, lifecycle);
+            patch$1(rootInput, input, parentDOM, context, false, null, lifecycle, isRootStart, environment, parentControlNode);
             rootInput = parentDOM.$V = input;
         }
     }
-    if (lifecycle.length > 0) {
-        callAll(lifecycle);
-    }
     if (isFunction(callback)) {
-        callback();
+        // @ts-ignore
+        lifecycle.mount.push(callback);
+    }
+    if (!environment.asyncRenderIds || Object.keys(environment.asyncRenderIds).length === 0) {
+        if (lifecycle.length > 0) {
+            callAll(lifecycle);
+        }
+        // @ts-ignore
+        if (lifecycle.mount.length > 0) {
+            // @ts-ignore
+            callAll(lifecycle.mount);
+        }
     }
     if (isFunction(options.renderComplete)) {
         options.renderComplete(rootInput, parentDOM);
     }
 }
-function render(input, parentDOM, callback, context, isRootStart) {
+function render(input, parentDOM, callback, context, isRootStart, environment, parentControlNode) {
     if ( callback === void 0 ) callback = null;
     if ( context === void 0 ) context = EMPTY_OBJ;
 
-    __render(input, parentDOM, callback, context, isRootStart);
+    __render(input, parentDOM, callback, context, isRootStart, environment, parentControlNode);
 }
 function createRenderer(parentDOM) {
     return function renderer(lastInput, nextInput, callback, context) {
@@ -2359,8 +3755,8 @@ function createRenderer(parentDOM) {
     };
 }
 
-var QUEUE = [];
 var nextTick = typeof Promise !== 'undefined' ? Promise.resolve().then.bind(Promise.resolve()) : setTimeout.bind(window);
+var QUEUE = [];
 function queueStateChanges(component, newState, callback, force) {
     if (isFunction(newState)) {
         newState = newState(component.state, component.props, component.context);
@@ -2382,6 +3778,7 @@ function queueStateChanges(component, newState, callback, force) {
                 return;
             }
         }
+        // @ts-ignore
         if (QUEUE.push(component) === 1) {
             nextTick(rerender);
         }
@@ -2485,7 +3882,7 @@ Component.prototype.render = function render (_nextProps, _nextState, _nextConte
     var testFunc = function testFn() { };
     /* tslint:disable-next-line*/
     // @ts-ignore
-    IoC.resolve("ILogger").log("Inferno core", "Inferno is in development mode.");
+    Env.IoC.resolve("ILogger").log("Inferno core", "Inferno is in development mode.");
     if ((testFunc.name || testFunc.toString()).indexOf('testFn') === -1) {
         warning("It looks like you're using a minified copy of the development build " +
             'of Inferno. When deploying Inferno apps to production, make sure to use ' +
@@ -2525,4 +3922,16 @@ exports._MR = mountRef;
 exports._MT = mountText;
 exports._MP = mountProps;
 exports.__render = __render;
- return exports;});
+exports._PS = patchStyle;
+exports._CWCI = createWasabyControlInstance;
+exports._MWWC = mountWasabyCallback;
+exports._CWTN = createWasabyTemplateNode;
+exports._queueWasabyControlChanges = queueWasabyControlChanges;
+exports._callAll = callAll;
+exports.nextTickWasaby = nextTickWasaby;
+exports._SWCNH = setWasabyControlNodeHooks;
+exports.beforeRenderCallback = beforeRenderCallback;
+exports.appendForFocuses = appendForFocuses;
+
+exports.initInfernoIndex = initInfernoIndex;
+return exports;});

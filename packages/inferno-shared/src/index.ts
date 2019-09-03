@@ -1,11 +1,13 @@
+// @ts-ignore
+import { RawMarkupNode } from 'View/Executor/ExpressionsLib';
+
 export const ERROR_MSG = 'a runtime error occured! Use Inferno in development environment to find the error.';
 
 export const isArray = Array.isArray;
 
 export function isStringOrNumber(o: any): o is string | number {
   const type = typeof o;
-  // @ts-ignore
-  return type === 'string' || type === 'number' || type instanceof RawMarkupNode;
+  return type === 'string' || type === 'number' || o instanceof RawMarkupNode;
 }
 
 export function isNullOrUndef(o: any): o is undefined | null {
