@@ -1,4 +1,10 @@
-import { createTextVNode } from '../core/implementation'
+import { createTextVNode } from '../core/implementation';
+// @ts-ignore
+import { Functional } from 'Vdom/VdomLib';
+// @ts-ignore
+import { Compatible, OptionsResolver } from 'View/Executor/Utils/ViewUtilsLib';
+// @ts-ignore
+import { GeneratorText } from 'View/Executor/MarkupLib';
 
 function getModuleDefaultCtor(mod) {
    // @ts-nocheck
@@ -6,8 +12,7 @@ function getModuleDefaultCtor(mod) {
 }
 
 function getControlNodeParams(control, environment) {
-   // @ts-ignore
-   const composedDecorator = FunctionalUtils.composeWithResultApply.call(undefined, [environment.getMarkupNodeDecorator()]).bind(control);
+   const composedDecorator = Functional.composeWithResultApply.call(undefined, [environment.getMarkupNodeDecorator()]).bind(control);
    return {
       defaultOptions: {}, // нет больше понятия опция по умолчанию
       markupDecorator: composedDecorator
@@ -93,8 +98,7 @@ export function createNode(controlClass_, options, key, environment, parentNode,
 
       if (compound) {
          // Создаем виртуальную ноду для compound контрола
-         // @ts-ignore
-         result = Compatible.createCompoundControlNode(controlClass_, controlCnstr, [], userOptions, internalOptions, key, parentNode, vnode, MarkupGeneratorText.default);
+         result = Compatible.createCompoundControlNode(controlClass_, controlCnstr, [], userOptions, internalOptions, key, parentNode, vnode, GeneratorText);
          result.environment = environment;
          return result;
       } else {
@@ -113,7 +117,6 @@ export function createNode(controlClass_, options, key, environment, parentNode,
 
          if (typeof controlClass_ === 'function') {
             // создаем инстанс компонента
-            // @ts-ignore
             instCompat = Compatible.createInstanceCompatible(controlCnstr, optionsWithState, internalOptions);
             control = instCompat.instance;
             optionsWithState = instCompat.resolvedOptions;
@@ -121,11 +124,9 @@ export function createNode(controlClass_, options, key, environment, parentNode,
          } else {
             // инстанс уже есть, работаем с его опциями
             control = controlClass_;
-            // @ts-ignore
             defaultOptions = OptionsResolver.getDefaultOptions(controlClass_);
             // @ts-ignore
             if (isJs.compat) {
-               // @ts-ignore
                optionsWithState = Compatible.combineOptionsIfCompatible(
                   controlCnstr.prototype,
                   optionsWithState,
