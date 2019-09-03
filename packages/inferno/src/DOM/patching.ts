@@ -2,7 +2,7 @@ import { combineFrom, isFunction, isInvalid, isNull, isNullOrUndef, unescape } f
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { directClone } from '../core/implementation';
 import { VNode } from '../core/types';
-import { mount, mountArrayChildren, mountTextContent, mountWasabyCallback, getMarkupForTemplatedNode, beforeRenderCallback, appendForFocuses, startQueue } from './mounting';
+import { mount, mountArrayChildren, mountTextContent, mountWasabyCallback, getMarkupForTemplatedNode, beforeRenderCallback, startQueue } from './mounting';
 import { clearDOM, remove, removeAllChildren, unmount, unmountAllChildren } from './unmounting';
 import { appendChild, createDerivedState, EMPTY_OBJ, findDOMfromVNode, moveVNodeDOM, options, removeChild, removeVNodeDOM, replaceChild } from './utils/common';
 import { isControlledFormElement, processElement } from './wrappers/processElement';
@@ -19,6 +19,8 @@ import { RawMarkupNode, ContextResolver } from 'View/Executor/ExpressionsLib';
 import { Compatible, OptionsResolver } from 'View/Executor/Utils/ViewUtilsLib';
 // @ts-ignore
 import { Hooks, getChangedOptions } from 'Vdom/VdomLib';
+// @ts-ignore
+import { BoundaryElements } from 'UI/FocusLib';
 
 function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], isRootStart?: boolean, environment?: any, parentControlNode?: any, parentVNode?: any) {
   unmount(lastVNode);
@@ -32,7 +34,7 @@ function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: O
       mount(nextVNode, parentDOM, context, isSVG, null, lifecycle, true, environment, parentControlNode, nextVNode);
       if (parentDOM.parentNode) {
         // @ts-ignore
-        removeVNodeDOM(lastVNode, parentDOM.parentNode);
+        removeVNodeDOM(lastVNode, parentDOM.parentNode as Element);
       }
     } else {
       // Single DOM operation, when we have dom references available
@@ -233,7 +235,6 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object
       }
     }
   }
-  appendForFocuses(nextVNode, environment);
   const nextChildren = nextVNode.children;
   const nextClassName = nextVNode.className;
 
@@ -281,7 +282,7 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object
   if (lastRef !== nextRef) {
     unmountRef(lastRef);
     mountRef(nextRef, dom, lifecycle);
-    appendForFocuses(nextVNode, environment);
+    BoundaryElements.insertBoundaryElements(environment, nextVNode);
   }
 }
 
