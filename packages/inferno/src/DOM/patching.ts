@@ -11,7 +11,12 @@ import { handleComponentInput, renderNewInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
 import { mountRef, unmountRef } from '../core/refs';
 import { getDecoratedMarkup, collectObjectVersions } from '../wasaby/control'
-
+// @ts-ignore
+import { RawMarkupNode, ContextResolver } from 'View/Executor/ExpressionsLib';
+// @ts-ignore
+import { Compatible, OptionsResolver } from 'View/Executor/Utils/ViewUtilsLib';
+// @ts-ignore
+import { Hooks, getChangedOptions } from 'Vdom/VdomLib';
 
 function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], isRootStart?: boolean, environment?: any, parentControlNode?: any, parentVNode?: any) {
   unmount(lastVNode);
@@ -112,7 +117,6 @@ export function patch(
     // @ts-ignore
   } else if (nextFlags & VNodeFlags.TemplateWasabyNode) {
     patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, nextNode, environment, parentControlNode);
-    // @ts-ignore
   } else if (nextVNode instanceof RawMarkupNode) {
     patchHTML(lastVNode, nextVNode, parentDOM);
   } else {
@@ -121,7 +125,6 @@ export function patch(
 }
 
 export function patchHTML(lastVNode, nextVNode, parentDOM) {
-  // @ts-ignore
   if (nextVNode instanceof RawMarkupNode) {
     if (lastVNode.markup !== nextVNode.markup) {
        parentDOM.innerHTML = nextVNode.markup;
@@ -198,7 +201,6 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object
 
   // inlined patchProps  -- starts --
   if (nextVNode.hprops && nextVNode.hprops.events && Object.keys(nextVNode.hprops.events).length > 0) {
-    // @ts-ignore
     const setEventFunction = Hooks.setEventHooks(environment);
     const templateNodeEventRef = setEventFunction(nextVNode.type, nextVNode.hprops, nextVNode.children, nextVNode.key, parentControlNode, nextVNode.ref)
     nextVNode.ref = templateNodeEventRef[4];
@@ -397,12 +399,10 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
   nextVNode.optionsVersions = collectObjectVersions(nextVNode.controlProperties);    // check current context field versions
     // check current context field versions
   nextVNode.contextVersions = collectObjectVersions(nextVNode.context);
-  // @ts-ignore
-  const changedOptions = DC.getChangedOptions(nextVNode.controlProperties, lastVNode.controlProperties, false, lastVNode.optionsVersions);
+  const changedOptions = getChangedOptions(nextVNode.controlProperties, lastVNode.controlProperties, false, lastVNode.optionsVersions);
   const oldAttrs = lastVNode.attributes.attributes;
   const newAttrs = nextVNode.attributes.attributes;
-  // @ts-ignore
-  const changedAttrs = DC.getChangedOptions(newAttrs, oldAttrs, false, {});
+  const changedAttrs = getChangedOptions(newAttrs, oldAttrs, false, {});
   const changedTemplate = lastVNode.template !== nextVNode.template;
   let nextInput;
   nextVNode.childFlags = nextVNode.markup && nextVNode.markup.length ? nextVNode.key ? 8 : 4 : 0;
@@ -434,7 +434,6 @@ function patchWasabyTemplateNode(lastVNode, nextVNode, parentDOM, context, isSVG
             };
         }
         if (node.hprops) {
-            // @ts-ignore
             const setEventFunction = Hooks.setEventHooks(environment);
             const templateNodeEventRef = setEventFunction(node.type, node.hprops, node.children, node.key, parentControlNode, node.ref);
             node.ref = templateNodeEventRef[4];
@@ -555,18 +554,15 @@ function patchClassComponent(lastVNode, nextVNode, parentDOM, context, isSVG: bo
 // @ts-ignore
 function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, environment, parentControlNode, parentVNode) {
   // для не-compound контролов делаем проверку изменения служебных опций
-  // @ts-ignore
-  const changedInternalOptions = DC.getChangedOptions(nextVNode.controlInternalProperties, lastVNode.internalOptions);
+  const changedInternalOptions = getChangedOptions(nextVNode.controlInternalProperties, lastVNode.internalOptions);
   // Атрибуты тоже учавствуют в DirtyChecking
-  // @ts-ignore
-  const changedOptions = DC.getChangedOptions(
+  const changedOptions = getChangedOptions(
          nextVNode.controlProperties,
          lastVNode.controlProperties,
          nextVNode.compound,
          lastVNode.instance.optionsVersions
       );
-  // @ts-ignore
-  const changedContext = DC.getChangedOptions(
+  const changedContext = getChangedOptions(
           nextVNode.context,
           lastVNode.instance.context,
           false,
@@ -574,10 +570,7 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
       );
   const oldOptions = lastVNode.instance.options;
   const oldAttrs = lastVNode.controlAttributes || lastVNode.instance.attributes;
-  // @ts-ignore
-  const changedContextProto = changedContext ? changedContext : DC.getChangedOptions(nextVNode.context, lastVNode.context, false, lastVNode.instance.contextVersions, true);
-  // @ts-ignore
-  const changedAttrs = DC.getChangedOptions(nextVNode.controlAttributes, oldAttrs, nextVNode.compound);
+  const changedAttrs = getChangedOptions(nextVNode.controlAttributes, oldAttrs, nextVNode.compound);
   const childControlNode = lastVNode.instance;
   const childControl = childControlNode.control;
   environment = lastVNode.instance.environment;
@@ -588,7 +581,6 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
   // @ts-ignore
   let beforeUpdateResults;
   const newOptions = nextVNode.compound ?
-      // @ts-ignore
              Compatible.createCombinedOptions(nextVNode.controlProperties, nextVNode.controlInternalProperties)
              : nextVNode.controlProperties;
   if (lastVNode.carrier) {
@@ -605,12 +597,9 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
             //      changedOptions || changedInternalOptions || changedAttrs || changedContext
             //  ]);
               environment.setRebuildIgnoreId(childControlNode.id);
-              // @ts-ignore
               OptionsResolver.resolveInheritOptions(childControlNode.controlClass, childControlNode, newOptions);
               childControl.saveInheritOptions(childControlNode.inheritOptions);
-              // @ts-ignore
               resolvedContext = ContextResolver.resolveContext(childControlNode.controlClass, newChildNodeContext, childControlNode.control);
-              // @ts-ignore
               OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, parentControlNode.control._moduleName);
               // Forbid force update in the time between _beforeUpdate and _afterUpdate
               // @ts-ignore
@@ -628,7 +617,6 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
               childControlNode.attributes = nextVNode.controlAttributes;
               childControlNode.events = nextVNode.controlEvents;
               childControl._saveContextObject(resolvedContext);
-              // @ts-ignore
               childControl.saveFullContext(ContextResolver.wrapContext(childControl, childControl._context));
           } finally {
               /**
@@ -645,14 +633,11 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
                   childControlNode.internalOptions = nextVNode.controlInternalProperties;
               }
           }
-          // @ts-ignore
           childControlNode.control.saveFullContext(ContextResolver.wrapContext(childControlNode.control, childControlNode.context || {}));
-          // @ts-ignore
           const nextInput = getDecoratedMarkup(childControlNode, false);
           nextVNode.instance = childControlNode;
           nextInput.ref = nextVNode.instance.markup.ref;
 
-          // @ts-ignore
           const setEventFunction = Hooks.setEventHooks(environment);
           const controlNodeEventRef = setEventFunction(childControlNode.markup.type, {
             attributes: nextVNode.controlAttributes,
@@ -693,12 +678,9 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
           //      changedOptions || changedInternalOptions || changedAttrs || changedContext
           //  ]);
             environment.setRebuildIgnoreId(childControlNode.id);
-            // @ts-ignore
             OptionsResolver.resolveInheritOptions(childControlNode.controlClass, childControlNode, newOptions);
             childControl.saveInheritOptions(childControlNode.inheritOptions);
-            // @ts-ignore
             resolvedContext = ContextResolver.resolveContext(childControlNode.controlClass, newChildNodeContext, childControlNode.control);
-            // @ts-ignore
             OptionsResolver.resolveOptions(childControlNode.controlClass, childControlNode.defaultOptions, newOptions, parentControlNode.control._moduleName);
             // Forbid force update in the time between _beforeUpdate and _afterUpdate
             // @ts-ignore
@@ -716,7 +698,6 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
             childControlNode.attributes = nextVNode.controlAttributes;
             childControlNode.events = nextVNode.controlEvents;
             childControl._saveContextObject(resolvedContext);
-            // @ts-ignore
             childControl.saveFullContext(ContextResolver.wrapContext(childControl, childControl._context));
         } finally {
             /**
@@ -733,14 +714,11 @@ function patchWasabyControl(lastVNode, nextVNode, parentDOM, context, isSVG, lif
                 childControlNode.internalOptions = nextVNode.controlInternalProperties;
             }
         }
-        // @ts-ignore
         childControlNode.control.saveFullContext(ContextResolver.wrapContext(childControlNode.control, childControlNode.context || {}));
-        // @ts-ignore
         const nextInput = getDecoratedMarkup(childControlNode, false);
         nextVNode.instance = childControlNode;
         nextInput.ref = nextVNode.instance.markup.ref;
 
-        // @ts-ignore
         const setEventFunction = Hooks.setEventHooks(environment);
         const controlNodeEventRef = setEventFunction(childControlNode.markup.type, {
           attributes: nextVNode.controlAttributes,
