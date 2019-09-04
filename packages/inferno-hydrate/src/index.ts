@@ -317,6 +317,15 @@ function ignoredById(node) {
   }).length > 0
 }
 
+/* we have to ignore in html tag everything except of head & body */
+function ignoredByPlace(nextSibling) {
+  return nextSibling &&
+    nextSibling.tagName !== 'HEAD' &&
+    nextSibling.tagName !== 'BODY' &&
+    nextSibling.parentNode &&
+    nextSibling.parentNode.tagName === 'HTML';
+}
+
 /* we have some node that needs to be ignored
 * because it was created by requirejs*/
 function isIgnoredNode(nextSibling) {
@@ -325,7 +334,7 @@ function isIgnoredNode(nextSibling) {
   ignoreExtensionScripts(nextSibling) || ignoreExtensionCSS(nextSibling) ||
   (nextSibling && nextSibling.attributes && nextSibling.attributes['data-vdomignore']) ||
   /*ignore ghostery chrome plugin*/
-  ignoredById(nextSibling);
+  ignoredById(nextSibling) || ignoredByPlace(nextSibling);
 }
 
 function skipIgnoredNode(childNode) {
