@@ -89,11 +89,11 @@ export function createNode(controlClass_, options, key, environment, parentNode,
 
       fixInternalParentOptions(internalOptions, userOptions, parentNode);
 
-      if (!key) {
-         /*У каждой ноды должен быть ключ
-          * for строит внутренние ноды относительно этого ключа
-          * */
-         key = '_';
+      /* У каждой ноды должен быть ключ
+       * for строит внутренние ноды относительно этого ключа
+       */
+      if (!(typeof key === 'string' && key || typeof key === 'number' && isFinite(key))) {
+        key = '_';
       }
 
       if (compound) {
