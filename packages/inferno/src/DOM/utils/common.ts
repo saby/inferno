@@ -135,7 +135,11 @@ export function removeVNodeDOM(vNode: VNode, parentDOM: Element) {
   const flags = vNode.flags;
 
   if (flags & VNodeFlags.DOMRef) {
-    removeChild(parentDOM, vNode.dom as Element);
+    // todo this condition fix problem with vdom-focus-in
+    // vdom-focus-in has no dom element and can't be removed
+    if (vNode.dom) {
+      removeChild(parentDOM, vNode.dom as Element);
+    }
   } else if (flags & VNodeFlags.WasabyControl) {
     // CompoundControls remove their containers automatically when destroyed
     // @ts-ignore

@@ -1,8 +1,14 @@
 import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning, unescape } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
-import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, _SWCNH, beforeRenderCallback, appendForFocuses, _MHTML} from 'inferno';
+import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS, _CWCI, _queueWasabyControlChanges, _MWWC, _CWTN, _SWCNH, beforeRenderCallback, _MHTML} from 'inferno';
 // @ts-ignore
 import { OperationType, injectKey, startSync, endSync, startControlCommit, startTemplateCommit, startLifecycle, startLifecycleCallback, endControlLifecycle, endControlLifecycleCallback, endTemplateLifecycle, endTemplateLifecycleCallback, endCommit } from 'Vdom/DevtoolsHook';
+// @ts-ignore
+import { RawMarkupNode } from 'View/Executor/ExpressionsLib';
+// @ts-ignore
+import { Hooks } from 'Vdom/VdomLib';
+// @ts-ignore
+import { BoundaryElements } from 'UI/FocusLib';
 
 function checkIfHydrationNeeded(sibling: Node | Element | null): boolean {
   // @ts-ignore
@@ -311,6 +317,15 @@ function ignoredById(node) {
   }).length > 0
 }
 
+/* we have to ignore in html tag everything except of head & body */
+function ignoredByPlace(nextSibling) {
+  return nextSibling &&
+    nextSibling.tagName !== 'HEAD' &&
+    nextSibling.tagName !== 'BODY' &&
+    nextSibling.parentNode &&
+    nextSibling.parentNode.tagName === 'HTML';
+}
+
 /* we have some node that needs to be ignored
 * because it was created by requirejs*/
 function isIgnoredNode(nextSibling) {
@@ -319,7 +334,7 @@ function isIgnoredNode(nextSibling) {
   ignoreExtensionScripts(nextSibling) || ignoreExtensionCSS(nextSibling) ||
   (nextSibling && nextSibling.attributes && nextSibling.attributes['data-vdomignore']) ||
   /*ignore ghostery chrome plugin*/
-  ignoredById(nextSibling);
+  ignoredById(nextSibling) || ignoredByPlace(nextSibling);
 }
 
 function skipIgnoredNode(childNode) {
@@ -342,7 +357,6 @@ function hydrateElement(vNode: VNode, parentDOM: Element, dom: Element, context:
 
   isSVG = isSVG || (flags & VNodeFlags.SvgElement) > 0;
   if (vNode.hprops && vNode.hprops.events && Object.keys(vNode.hprops.events).length > 0) {
-    // @ts-ignore
     const setEventFunction = Hooks.setEventHooks(environment);
     const templateNodeEventRef = setEventFunction(vNode.type, vNode.hprops, vNode.children, vNode.key, parentControlNode, vNode.ref);
     vNode.ref = templateNodeEventRef[4];
@@ -400,7 +414,7 @@ function hydrateElement(vNode: VNode, parentDOM: Element, dom: Element, context:
     }
     _MR(ref, dom, lifecycle);
   }
-  appendForFocuses(vNode, environment);
+  BoundaryElements.insertBoundaryElements(environment, vNode);
   return vNode.dom;
 }
 
@@ -450,7 +464,6 @@ function hydrateVNode(vNode: VNode, parentDOM: Element, currentDom: Element, con
   if (flags & VNodeFlags.Component) {
     return hydrateComponent(vNode, parentDOM, currentDom, context, isSVG, (flags & VNodeFlags.ComponentClass) > 0, lifecycle);
   }
-  // @ts-ignore
   if (vNode instanceof RawMarkupNode) {
     return hydrateHTML(vNode, currentDom, parentDOM);
   }
