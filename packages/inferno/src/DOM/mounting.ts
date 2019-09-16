@@ -25,7 +25,7 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
     mountPortal(vNode, context, parentDOM, nextNode, lifecycle);
     // @ts-ignore
   } else if (vNode instanceof RawMarkupNode) {
-    return mountHTML(vNode, parentDOM);
+    return mountHTML(vNode, parentDOM, nextNode);
   } else if (process.env.NODE_ENV !== 'production') {
     // Development validation, in production we don't need to throw because it crashes anyway
     if (typeof vNode === 'object') {
@@ -40,11 +40,11 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
   }
 }
 
-export function mountHTML(vNode: VNode, parentDom: Element | null): any {
+export function mountHTML(vNode: VNode, parentDom: Element | null, nextNode?): any {
   // @ts-ignore
   const dom = (vNode.dom = $(vNode.markup)[0]);
   if (!isNull(parentDom)) {
-    insertOrAppend(parentDom, dom, null);
+    insertOrAppend(parentDom, dom, nextNode);
   }
   return dom;
 
