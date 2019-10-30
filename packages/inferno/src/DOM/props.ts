@@ -86,7 +86,7 @@ export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boole
     case 'autoFocus':
       (dom as any).autofocus = !!nextValue;
       break;
-    case 'allowfullscreen':
+    case 'allowFullscreen':
     case 'autoplay':
     case 'capture':
     case 'checked':
