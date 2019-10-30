@@ -40,9 +40,22 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
   }
 }
 
+let domParser;
+
+function getDOMParser() {
+    if (!domParser) {
+        domParser = new DOMParser();
+    }
+    return domParser;
+}
+function parseHTML(markup) {
+    const result = getDOMParser().parseFromString(markup, 'text/html');
+    return result.body.firstChild;
+}
+
 export function mountHTML(vNode: VNode, parentDom: Element | null, nextNode?): any {
   // @ts-ignore
-  const dom = (vNode.dom = $(vNode.markup)[0]);
+  const dom = (vNode.dom = parseHTML(vNode.markup));
   if (!isNull(parentDom)) {
     insertOrAppend(parentDom, dom, nextNode);
   }
