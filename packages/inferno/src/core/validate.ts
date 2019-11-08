@@ -111,10 +111,7 @@ function DEV_ValidateKeys(vNodeTree, forceKeyed: boolean) {
       // In case of duplicate keys we don't want to crash the whole app because of that,
       // so we have to create a fixed duplicate on the fly
       // @ts-ignore
-      Env.IoC.resolve("ILogger").error(
-          'Deoptimizing perfomance due to duplicate node keys',
-          'Encountered two children with same key: {' + key + '}. Location: \n' + getTagName(childNode)
-      );
+      Logger.error('Deoptimizing perfomance due to duplicate node keys. Encountered two children with same key: {' + key + '}. Location: \n' + getTagName(childNode), childNode);
       key = duplicateKeys(childNode.key, foundKeys);
       childNode.key = key;
       // return 'Encountered two children with same key: {' + key + '}. Location: \n' + getTagName(childNode);

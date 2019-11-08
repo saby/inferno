@@ -25,6 +25,9 @@ export function unmount(vNode) {
 
     unmountRef(ref);
 
+    vNode.dom.$V = null;
+    vNode.dom.$EV = null;
+
     const childFlags = vNode.childFlags;
 
     if (!isNull(props)) {
