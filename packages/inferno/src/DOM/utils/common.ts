@@ -105,7 +105,9 @@ export function removeVNodeDOM(vNode: VNode, parentDOM: Element) {
     removeChild(parentDOM, vNode.dom as Element);
   // @ts-ignore
   } else if (vNode instanceof RawMarkupNode) {
-    removeChild(parentDOM, vNode.dom as Element);
+    if (vNode.dom && vNode.dom.parentNode) {
+      removeChild(parentDOM, vNode.dom as Element);
+    }
   } else {
     const children = vNode.children as any;
 
