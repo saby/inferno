@@ -14,7 +14,7 @@ export function textAreaEvents(dom, nextPropsOrEmpty) {
 }
 
 export function applyValueTextArea(nextPropsOrEmpty, dom, mounting: boolean) {
-  const value = unescape(nextPropsOrEmpty.value);
+  const value = nextPropsOrEmpty.value;
   const domValue = dom.value;
 
   if (isNullOrUndef(value)) {

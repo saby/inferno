@@ -119,7 +119,7 @@ export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boole
       }
       break;
     case 'style':
-      patchStyle(lastValue, unescape(nextValue), dom);
+      patchStyle(lastValue, nextValue, dom);
       break;
     case 'dangerouslySetInnerHTML':
       const lastHtml = (lastValue && lastValue.__html) || '';

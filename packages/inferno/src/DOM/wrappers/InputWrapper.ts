@@ -27,7 +27,7 @@ export function inputEvents(dom, nextPropsOrEmpty) {
 
 export function applyValueInput(nextPropsOrEmpty, dom) {
   const type = nextPropsOrEmpty.type;
-  const value = unescape(nextPropsOrEmpty.value);
+  const value = nextPropsOrEmpty.value;
   const checked = nextPropsOrEmpty.checked;
   const multiple = nextPropsOrEmpty.multiple;
   const defaultValue = nextPropsOrEmpty.defaultValue;
