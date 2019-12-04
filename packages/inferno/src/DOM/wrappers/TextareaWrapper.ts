@@ -1,4 +1,4 @@
-import { isNullOrUndef } from 'inferno-shared';
+import { isNullOrUndef, unescape } from 'inferno-shared';
 import { createWrappedFunction } from './wrapper';
 
 const onTextareaInputChange = createWrappedFunction('onInput', applyValueTextArea);
@@ -14,7 +14,7 @@ export function textAreaEvents(dom, nextPropsOrEmpty) {
 }
 
 export function applyValueTextArea(nextPropsOrEmpty, dom, mounting: boolean) {
-  const value = nextPropsOrEmpty.value;
+  const value = unescape(nextPropsOrEmpty.value);
   const domValue = dom.value;
 
   if (isNullOrUndef(value)) {

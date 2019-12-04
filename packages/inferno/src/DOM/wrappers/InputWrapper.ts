@@ -1,4 +1,4 @@
-import { isNullOrUndef } from 'inferno-shared';
+import { isNullOrUndef, unescape } from 'inferno-shared';
 import { createWrappedFunction } from './wrapper';
 
 export function isCheckedType(type): boolean {
@@ -27,7 +27,7 @@ export function inputEvents(dom, nextPropsOrEmpty) {
 
 export function applyValueInput(nextPropsOrEmpty, dom) {
   const type = nextPropsOrEmpty.type;
-  const value = nextPropsOrEmpty.value;
+  const value = unescape(nextPropsOrEmpty.value);
   const checked = nextPropsOrEmpty.checked;
   const multiple = nextPropsOrEmpty.multiple;
   const defaultValue = nextPropsOrEmpty.defaultValue;
