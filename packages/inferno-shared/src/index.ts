@@ -72,7 +72,7 @@ export function combineFrom(first: {} | null, second: {} | null): object {
   return out;
 }
 
-export function unescape(s: any, onlyASCII: boolean = false): string {
+export function unescape(s: any, onlyASCII: boolean | undefined): string {
   if (!s || !s.replace) {
     return s;
   }
