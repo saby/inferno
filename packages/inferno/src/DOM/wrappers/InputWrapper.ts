@@ -1,4 +1,4 @@
-import { isNullOrUndef, unescape } from 'inferno-shared';
+import { isNullOrUndef } from 'inferno-shared';
 import { createWrappedFunction } from './wrapper';
 
 export function isCheckedType(type): boolean {

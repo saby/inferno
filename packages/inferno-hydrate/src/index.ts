@@ -1,4 +1,4 @@
-import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning, unescape } from 'inferno-shared';
+import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS } from 'inferno';
 

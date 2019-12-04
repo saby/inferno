@@ -1,4 +1,4 @@
-import { isFunction, isNull, isNullOrUndef, isString, isStringOrNumber, throwError, unescape } from 'inferno-shared';
+import { isFunction, isNull, isNullOrUndef, isString, isStringOrNumber, throwError, } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { createVoidVNode, directClone } from '../core/implementation';
 import { VNode } from '../core/types';
