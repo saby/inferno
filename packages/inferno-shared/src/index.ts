@@ -72,14 +72,17 @@ export function combineFrom(first: {} | null, second: {} | null): object {
   return out;
 }
 
-export function unescape(s: any): string {
+export function unescape(s: any, onlyASCII: boolean = false): string {
   if (!s || !s.replace) {
+    return s;
+  }
+  // @ts-ignore
+  s = unEscapeASCII(s);
+  if (onlyASCII) {
     return s;
   }
   const translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
   const translate = {"nbsp": String.fromCharCode(160),"amp" : "&","quot": "\"","apos": "'","lt"  : "<","gt"  : ">"};
-  // @ts-ignore
-  s = unEscapeASCII(s);
   // @ts-ignore
   return ( s.replace(translate_re, function(match, entity) {
     return translate[entity];

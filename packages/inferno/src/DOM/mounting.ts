@@ -84,7 +84,7 @@ function mountFragment(vNode, parentDOM, context, isSVG, nextNode, lifecycle: Fu
 }
 
 export function mountText(vNode: VNode, parentDOM: Element | null, nextNode: Element | null): void {
-  const dom = (vNode.dom = document.createTextNode(unescape(vNode.children as string)) as any);
+  const dom = (vNode.dom = document.createTextNode(unescape(vNode.children as string, true)) as any);
 
   if (!isNull(parentDOM)) {
     insertOrAppend(parentDOM, dom, nextNode);
