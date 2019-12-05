@@ -273,7 +273,7 @@ function hydrateText(vNode: VNode, parentDOM: Element, dom: Element) {
     _MT(vNode, null, null);
     parentDOM.replaceChild(vNode.dom as Element, dom);
   } else {
-    const text = unescape(vNode.children, true);
+    const text = unescape(vNode.children, (vNode as any).noNeedUnescape);
 
     if (dom.nodeValue !== text) {
       dom.nodeValue = text as string;

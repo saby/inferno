@@ -487,7 +487,7 @@ function patchFunctionalComponent(lastVNode, nextVNode, parentDOM, context, isSV
 const ie10or11 = Env.detection.isIE10 || Env.detection.isIE11;
 
 function patchText(lastVNode: VNode, nextVNode: VNode, parentDOM: Element) {
-  const nextText = unescape(nextVNode.children as string, true);
+  const nextText = unescape(nextVNode.children as string, (nextVNode as any).noNeedUnescape);
   const dom = lastVNode.dom;
 
   if (nextText !== lastVNode.children && lastVNode.children !== nextVNode.children) {
