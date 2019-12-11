@@ -205,7 +205,7 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object
       }
     }
   }
-  const nextChildren = nextVNode.children;
+  const nextChildren = (nextVNode.children as any[]).filter((child) => child.type !== 'TemplateNode');
   const nextClassName = nextVNode.className;
 
   // inlined patchProps  -- ends --
