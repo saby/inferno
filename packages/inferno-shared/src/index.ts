@@ -72,8 +72,8 @@ export function combineFrom(first: {} | null, second: {} | null): object {
   return out;
 }
 
-export function unescape(s: any): string {
-  if (!s || !s.replace) {
+export function unescape(s: any, noNeedUnescape: boolean = false): string {
+  if (!s || !s.replace || noNeedUnescape) {
     return s;
   }
   const translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;

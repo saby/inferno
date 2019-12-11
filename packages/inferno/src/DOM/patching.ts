@@ -70,7 +70,7 @@ export function patch(
            dom = lastVNode.dom = elements[0];
         }
         for(let k=0; k<elements.length; k++) {
-            if (elements[k].attributes.key 
+            if (elements[k].attributes.key
                 && elements[k].attributes.key.value === lastVNode.key) {
                 dom = lastVNode.dom = elements[k];
                 break;
@@ -78,7 +78,7 @@ export function patch(
         }
         nextVNode.dom = dom;
      }
-  
+
       // Last vNode is not in use, it has crashed at application level. Just mount nextVNode and ignore last one
       mount(nextVNode, parentDOM, context, isSVG, nextNode, lifecycle);
     }
@@ -487,7 +487,7 @@ function patchFunctionalComponent(lastVNode, nextVNode, parentDOM, context, isSV
 const ie10or11 = Env.detection.isIE10 || Env.detection.isIE11;
 
 function patchText(lastVNode: VNode, nextVNode: VNode, parentDOM: Element) {
-  const nextText = unescape(nextVNode.children as string);
+  const nextText = unescape(nextVNode.children as string, (nextVNode as any).noNeedUnescape);
   const dom = lastVNode.dom;
 
   if (nextText !== lastVNode.children && lastVNode.children !== nextVNode.children) {
@@ -515,7 +515,7 @@ function patchText(lastVNode: VNode, nextVNode: VNode, parentDOM: Element) {
     } else {
       (dom as Element).nodeValue = nextText;
     }
-    
+
   }
 
   nextVNode.dom = dom;

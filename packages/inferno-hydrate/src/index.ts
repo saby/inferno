@@ -273,7 +273,7 @@ function hydrateText(vNode: VNode, parentDOM: Element, dom: Element) {
     _MT(vNode, null, null);
     parentDOM.replaceChild(vNode.dom as Element, dom);
   } else {
-    const text = unescape(vNode.children);
+    const text = unescape(vNode.children, (vNode as any).noNeedUnescape);
 
     if (dom.nodeValue !== text) {
       dom.nodeValue = text as string;
@@ -313,7 +313,7 @@ function hydrateVNode(vNode: VNode, parentDOM: Element, currentDom: Element, con
   }
   // @ts-ignore
   if (vNode instanceof RawMarkupNode) {
-    return hydrateHTML(vNode, currentDom);  
+    return hydrateHTML(vNode, currentDom);
   }
   if (flags & VNodeFlags.Element) {
     return hydrateElement(vNode, parentDOM, currentDom, context, isSVG, lifecycle, isRootStart);
