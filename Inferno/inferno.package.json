@@ -1,0 +1,7 @@
+{
+  "include": [
+    "Inferno/third-party/hydrate",
+    "Inferno/third-party/index"
+  ],
+  "output": "inferno-library.package.js"
+}
