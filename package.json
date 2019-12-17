@@ -49,7 +49,6 @@
     "build:tsc": "lerna exec tsc",
     "build:es": "npm run rollup -- --name=index --ext=.esm.js --env=production --format=es --uglify=false",
     "build:es:dev": "npm run rollup -- --name=index --ext=.dev.esm.js --env=development --format=es --uglify=false",
-    "build-esnext": "npm run rollup -- --name=index --ext=.esnext.js --env=production --format=es --esnext=true --uglify=false",
     "build:cjs": "npm run rollup -- --env=development --format=cjs --replace=true --name=index.cjs --uglify=false",
     "build:cjs:prod": "npm run rollup -- --env=production --format=cjs --replace=true --name=index.cjs --uglify=true --ext=.min.js",
     "predocs": "rimraf docs",
