@@ -34,8 +34,10 @@ function warning(message) {
     // @ts-ignore
     Logger.info('Inferno core - ' + message);
 }
-function unescape(s) {
-    if (!s || !s.replace) {
+function unescape(s, noNeedUnescape) {
+    if ( noNeedUnescape === void 0 ) { noNeedUnescape = false; }
+
+    if (!s || !s.replace || noNeedUnescape) {
         return s;
     }
     var translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
@@ -298,7 +300,7 @@ function hydrateText(vNode, parentDOM, dom) {
         parentDOM.replaceChild(vNode.dom, dom);
     }
     else {
-        var text = unescape(vNode.children);
+        var text = unescape(vNode.children, vNode.noNeedUnescape);
         if (dom.nodeValue !== text) {
             dom.nodeValue = text;
         }
