@@ -58,8 +58,10 @@ function combineFrom(first, second) {
     }
     return out;
 }
-function unescape(s) {
-    if (!s || !s.replace) {
+function unescape(s, noNeedUnescape) {
+    if ( noNeedUnescape === void 0 ) { noNeedUnescape = false; }
+
+    if (!s || !s.replace || noNeedUnescape) {
         return s;
     }
     var translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
@@ -1521,7 +1523,7 @@ function mountFragment(vNode, parentDOM, context, isSVG, nextNode, lifecycle) {
     }
 }
 function mountText(vNode, parentDOM, nextNode) {
-    var dom = (vNode.dom = document.createTextNode(unescape(vNode.children)));
+    var dom = (vNode.dom = document.createTextNode(unescape(vNode.children, vNode.noNeedUnescape)));
     if (!isNull(parentDOM)) {
         insertOrAppend(parentDOM, dom, nextNode);
     }
@@ -2045,7 +2047,7 @@ function patchFunctionalComponent(lastVNode, nextVNode, parentDOM, context, isSV
 // @ts-ignore
 var ie10or11 = Env.detection.isIE10 || Env.detection.isIE11;
 function patchText(lastVNode, nextVNode, parentDOM) {
-    var nextText = unescape(nextVNode.children);
+    var nextText = unescape(nextVNode.children, nextVNode.noNeedUnescape);
     var dom = lastVNode.dom;
     if (nextText !== lastVNode.children && lastVNode.children !== nextVNode.children) {
         // inner text has to be just for IE 10 and for EmptyTextNode
