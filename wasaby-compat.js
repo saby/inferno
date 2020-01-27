@@ -45,6 +45,7 @@ function replaceRequire(data) {
   }(unixifyPath(pathToSave), unixifyPath(sourcePath), amdName);
 }
 
+// test123
 copyData(
   path.join(__dirname, `${infernoIndexAmd}.js`),
   path.join(__dirname, `${infernoFilePath}.js`),
