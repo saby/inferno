@@ -1554,6 +1554,19 @@ function mountElement(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isR
     {
         validateKeys(vNode);
     }
+    if (!isNull(props)) {
+        if (vNode.type === 'link') {
+            if (dom) {
+                // @ts-ignore
+                if (props.href !== (dom.attributes.href && dom.attributes.href.value)) {
+                    mountProps(vNode, flags, props, dom, isSVG);
+                }
+            }
+        }
+        else {
+            mountProps(vNode, flags, props, dom, isSVG);
+        }
+    }
     if (!isRootStart && !isNull(parentDOM)) {
         insertOrAppend(parentDOM, dom, nextNode);
     }
@@ -1574,19 +1587,6 @@ function mountElement(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isR
             if (dom) {
                 mountArrayChildren(children, dom, context, childrenIsSVG, null, lifecycle);
             }
-        }
-    }
-    if (!isNull(props)) {
-        if (vNode.type === 'link') {
-            if (dom) {
-                // @ts-ignore
-                if (props.href !== (dom.attributes.href && dom.attributes.href.value)) {
-                    mountProps(vNode, flags, props, dom, isSVG);
-                }
-            }
-        }
-        else {
-            mountProps(vNode, flags, props, dom, isSVG);
         }
     }
     {
