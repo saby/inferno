@@ -339,7 +339,7 @@ function DEV_ValidateKeys(vNodeTree, forceKeyed) {
             // so we have to create a fixed duplicate on the fly
             // @ts-ignore
             Logger.error('Deoptimizing perfomance due to duplicate node keys. Encountered two children with same key: {' + key + '}. Location: \n' + getTagName(childNode), childNode);
-            key = duplicateKeys(childNode.key, foundKeys);
+            key = duplicateKeys(String(childNode.key), foundKeys);
             childNode.key = key;
             // return 'Encountered two children with same key: {' + key + '}. Location: \n' + getTagName(childNode);
         }
