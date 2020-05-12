@@ -7,6 +7,8 @@ const
     infernoIndexAmd = 'Inferno/third-party/index',
     infernoHydrateAmd = 'Inferno/third-party/hydrate';
 
+/* some changes */
+
 function unixifyPath(filePath) {
   return filePath.replace(/\\/g, '/');
 }
@@ -29,7 +31,7 @@ function replaceRequire(data) {
     }
     return result.join('\n');
 }
-    
+
  function copyData(pathToSave, sourcePath, amdName) {
   return function(savPath, srcPath, what) {
     const srcContent = fs.readFileSync(srcPath, 'utf8');
