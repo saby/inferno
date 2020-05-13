@@ -3,6 +3,5 @@
     "Inferno/third-party/hydrate",
     "Inferno/third-party/index"
   ],
-  "output": "inferno-library.package.js",
-  "types": "Inferno/Types.d.ts"
+  "output": "inferno-library.package.js"
 }

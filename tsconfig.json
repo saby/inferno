@@ -72,7 +72,6 @@
     "outDir": "build",
     "sourceMap": false,
     "declaration": true,
-    "declarationDir": "./Inferno/types",
     "lib": [
       "es6",
       "dom"
