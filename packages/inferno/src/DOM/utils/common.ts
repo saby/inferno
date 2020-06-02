@@ -61,7 +61,7 @@ export function removeChild(parentDOM: Element, childNode: Element) {
     } else if (childNode.parentNode) {
       parentDOM.removeChild(childNode);
     }
-  } else {
+  } else if (childNode.parentNode) {
     parentDOM.removeChild(childNode);
   }
 }
