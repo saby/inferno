@@ -133,7 +133,7 @@ function removeChild(parentDOM, childNode) {
             parentDOM.removeChild(childNode);
         }
     }
-    else {
+    else if (childNode.parentNode) {
         parentDOM.removeChild(childNode);
     }
 }
