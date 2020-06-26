@@ -46,7 +46,9 @@ export function documentCreateElement(tag, isSVG: boolean): Element {
 }
 
 export function replaceChild(parentDOM: Element, newDom, lastDom) {
-  parentDOM.replaceChild(newDom, lastDom);
+  if (lastDom.parentNode) {
+    parentDOM.replaceChild(newDom, lastDom);
+  }
 }
 
 export function removeChild(parentDOM: Element, childNode: Element) {

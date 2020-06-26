@@ -116,7 +116,9 @@ function documentCreateElement(tag, isSVG) {
     return document.createElement(tag);
 }
 function replaceChild(parentDOM, newDom, lastDom) {
-    parentDOM.replaceChild(newDom, lastDom);
+    if (lastDom.parentNode) {
+        parentDOM.replaceChild(newDom, lastDom);
+    }
 }
 function removeChild(parentDOM, childNode) {
     // @ts-ignore
