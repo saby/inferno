@@ -312,7 +312,7 @@ function hydrateVNode(vNode: VNode, parentDOM: Element, currentDom: Element, con
     return hydrateComponent(vNode, parentDOM, currentDom, context, isSVG, (flags & VNodeFlags.ComponentClass) > 0, lifecycle);
   }
   // @ts-ignore
-  if (vNode instanceof RawMarkupNode) {
+  if (vNode.moduleName === 'UI/_executor/_Expressions/RawMarkupNode') {
     return hydrateHTML(vNode, currentDom);
   }
   if (flags & VNodeFlags.Element) {
