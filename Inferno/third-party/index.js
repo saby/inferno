@@ -172,7 +172,7 @@ function removeVNodeDOM(vNode, parentDOM) {
         removeChild(parentDOM, vNode.dom);
         // @ts-ignore
     }
-    else if (vNode instanceof RawMarkupNode) {
+    else if (vNode.moduleName === 'UI/_executor/_Expressions/RawMarkupNode') {
         if (vNode.dom && vNode.dom.parentNode) {
             removeChild(parentDOM, vNode.dom);
         }
