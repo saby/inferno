@@ -5,7 +5,7 @@ export const isArray = Array.isArray;
 export function isStringOrNumber(o: any): o is string | number {
   const type = typeof o;
   // @ts-ignore
-  return type === 'string' || type === 'number' || type instanceof RawMarkupNode;
+  return type === 'string' || type === 'number' || type && type.moduleName === 'UI/_executor/_Expressions/RawMarkupNode';
 }
 
 export function isNullOrUndef(o: any): o is undefined | null {

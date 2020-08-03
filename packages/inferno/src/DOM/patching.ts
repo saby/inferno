@@ -95,7 +95,7 @@ export function patch(
   } else if (nextFlags & VNodeFlags.Fragment) {
     patchFragment(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle);
     // @ts-ignore
-  } else if (nextVNode instanceof RawMarkupNode) {
+  } else if (nextVNode.moduleName === 'UI/_executor/_Expressions/RawMarkupNode') {
     patchHTML(lastVNode, nextVNode, parentDOM);
   } else {
     patchPortal(lastVNode, nextVNode, context, lifecycle);
@@ -104,7 +104,7 @@ export function patch(
 
 export function patchHTML(lastVNode, nextVNode, parentDOM) {
   // @ts-ignore
-  if (nextVNode instanceof RawMarkupNode) {
+  if (nextVNode.moduleName === 'UI/_executor/_Expressions/RawMarkupNode') {
     if (lastVNode.markup !== nextVNode.markup) {
        parentDOM.innerHTML = nextVNode.markup;
     }

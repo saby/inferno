@@ -24,7 +24,7 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
   } else if (flags & VNodeFlags.Portal) {
     mountPortal(vNode, context, parentDOM, nextNode, lifecycle);
     // @ts-ignore
-  } else if (vNode instanceof RawMarkupNode) {
+  } else if (vNode.moduleName === 'UI/_executor/_Expressions/RawMarkupNode') {
     return mountHTML(vNode, parentDOM, nextNode);
   } else if (process.env.NODE_ENV !== 'production') {
     // Development validation, in production we don't need to throw because it crashes anyway

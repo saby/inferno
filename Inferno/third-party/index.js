@@ -1,4 +1,4 @@
-define('Inferno/third-party/index', ['View/Executor/Expressions', 'Core/helpers/String/unEscapeASCII','Env/Env', 'UI/Utils'], function (Expressions, unEscapeASCII, Env, uiUtils) {var exports = {}, RawMarkupNode = Expressions.RawMarkupNode, Logger = uiUtils.Logger; 'use strict';
+define('Inferno/third-party/index', ['Core/helpers/String/unEscapeASCII','Env/Env', 'UI/Utils'], function (unEscapeASCII, Env, uiUtils) {var exports = {}, Logger = uiUtils.Logger; 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
@@ -7,7 +7,7 @@ var isArray = Array.isArray;
 function isStringOrNumber(o) {
     var type = typeof o;
     // @ts-ignore
-    return type === 'string' || type === 'number' || type instanceof RawMarkupNode;
+    return type === 'string' || type === 'number' || type && type.moduleName === 'UI/_executor/_Expressions/RawMarkupNode';
 }
 function isNullOrUndef(o) {
     return isUndefined(o) || isNull(o);
@@ -172,7 +172,7 @@ function removeVNodeDOM(vNode, parentDOM) {
         removeChild(parentDOM, vNode.dom);
         // @ts-ignore
     }
-    else if (vNode instanceof RawMarkupNode) {
+    else if (vNode.moduleName === 'UI/_executor/_Expressions/RawMarkupNode') {
         if (vNode.dom && vNode.dom.parentNode) {
             removeChild(parentDOM, vNode.dom);
         }
@@ -1477,7 +1477,7 @@ function mount(vNode, parentDOM, context, isSVG, nextNode, lifecycle, isRootStar
         mountPortal(vNode, context, parentDOM, nextNode, lifecycle);
         // @ts-ignore
     }
-    else if (vNode instanceof RawMarkupNode) {
+    else if (vNode.moduleName === 'UI/_executor/_Expressions/RawMarkupNode') {
         return mountHTML(vNode, parentDOM, nextNode);
     }
     else {
@@ -1738,7 +1738,7 @@ function patch(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecy
         patchFragment(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle);
         // @ts-ignore
     }
-    else if (nextVNode instanceof RawMarkupNode) {
+    else if (nextVNode.moduleName === 'UI/_executor/_Expressions/RawMarkupNode') {
         patchHTML(lastVNode, nextVNode, parentDOM);
     }
     else {
@@ -1747,7 +1747,7 @@ function patch(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecy
 }
 function patchHTML(lastVNode, nextVNode, parentDOM) {
     // @ts-ignore
-    if (nextVNode instanceof RawMarkupNode) {
+    if (nextVNode.moduleName === 'UI/_executor/_Expressions/RawMarkupNode') {
         if (lastVNode.markup !== nextVNode.markup) {
             parentDOM.innerHTML = nextVNode.markup;
         }

@@ -15,7 +15,7 @@ function replaceRequire(data) {
 }
  function infernoDefineModuleCreate(what, data, releaseMode) {
    const result = [];
-   result.push(`define('${what}', ['View/Executor/Expressions', 'Core/helpers/String/unEscapeASCII','Env/Env', 'UI/Utils'], function (Expressions, unEscapeASCII, Env, uiUtils) {var exports = {}, RawMarkupNode = Expressions.RawMarkupNode, Logger = uiUtils.Logger; ${data} return exports;});`);
+   result.push(`define('${what}', ['Core/helpers/String/unEscapeASCII','Env/Env', 'UI/Utils'], function (unEscapeASCII, Env, uiUtils) {var exports = {}, Logger = uiUtils.Logger; ${data} return exports;});`);
    if (releaseMode) {
      result.push(`define('${what}.min',['${what}'],function(infernoModule){return infernoModule;});`);
    }
@@ -23,7 +23,7 @@ function replaceRequire(data) {
  }
  function hydrateDefineModuleCreate(what, data, releaseMode) {
     const result = [];
-    result.push(`define('${what}', ['View/Executor/Expressions', 'Core/helpers/String/unEscapeASCII','Env/Env', 'Inferno/third-party/index', 'UI/Utils'], function (Expressions, unEscapeASCII, Env, ${infernoVarName}, uiUtils) {var exports = {}, RawMarkupNode = Expressions.RawMarkupNode, Logger = uiUtils.Logger; ${replaceRequire(data)} return exports;});`);
+    result.push(`define('${what}', ['Core/helpers/String/unEscapeASCII','Env/Env', 'Inferno/third-party/index', 'UI/Utils'], function (unEscapeASCII, Env, ${infernoVarName}, uiUtils) {var exports = {}, Logger = uiUtils.Logger; ${replaceRequire(data)} return exports;});`);
     if (releaseMode) {
       result.push(`define('${what}.min',['${what}'],function(infernoModule){return infernoModule;});`);
     }

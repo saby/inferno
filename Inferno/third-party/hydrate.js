@@ -1,4 +1,4 @@
-define('Inferno/third-party/hydrate', ['View/Executor/Expressions', 'Core/helpers/String/unEscapeASCII','Env/Env', 'Inferno/third-party/index', 'UI/Utils'], function (Expressions, unEscapeASCII, Env, infernoSource, uiUtils) {var exports = {}, RawMarkupNode = Expressions.RawMarkupNode, Logger = uiUtils.Logger; 'use strict';
+define('Inferno/third-party/hydrate', ['Core/helpers/String/unEscapeASCII','Env/Env', 'Inferno/third-party/index', 'UI/Utils'], function (unEscapeASCII, Env, infernoSource, uiUtils) {var exports = {}, Logger = uiUtils.Logger; 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
@@ -329,7 +329,7 @@ function hydrateVNode(vNode, parentDOM, currentDom, context, isSVG, lifecycle, i
         return hydrateComponent(vNode, parentDOM, currentDom, context, isSVG, (flags & 4 /* ComponentClass */) > 0, lifecycle);
     }
     // @ts-ignore
-    if (vNode instanceof RawMarkupNode) {
+    if (vNode.moduleName === 'UI/_executor/_Expressions/RawMarkupNode') {
         return hydrateHTML(vNode, currentDom);
     }
     if (flags & 481 /* Element */) {
