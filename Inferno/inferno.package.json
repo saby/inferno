@@ -6,7 +6,7 @@
   "output": "inferno-library.package.js"
 }, {
   "includePackages": [
-    "inferno-library.package.js"
+    "Inferno/inferno-library.package.js"
   ],
   "extendsTo": "online-superbundle.package.js"
 }]
