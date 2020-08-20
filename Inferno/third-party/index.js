@@ -58,14 +58,14 @@ function combineFrom(first, second) {
     }
     return out;
 }
+var translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
+var translate = { "nbsp": String.fromCharCode(160), "amp": "&", "quot": "\"", "apos": "'", "lt": "<", "gt": ">" };
 function unescape(s, noNeedUnescape) {
     if ( noNeedUnescape === void 0 ) { noNeedUnescape = false; }
 
     if (!s || !s.replace || noNeedUnescape) {
         return s;
     }
-    var translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
-    var translate = { "nbsp": String.fromCharCode(160), "amp": "&", "quot": "\"", "apos": "'", "lt": "<", "gt": ">" };
     // @ts-ignore
     s = unEscapeASCII(s);
     // @ts-ignore
