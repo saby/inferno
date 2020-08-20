@@ -1,7 +1,12 @@
-{
+[{
   "include": [
     "Inferno/third-party/hydrate",
     "Inferno/third-party/index"
   ],
   "output": "inferno-library.package.js"
-}
+}, {
+  "includePackages": [
+    "Inferno/inferno-library.package.js"
+  ],
+  "extendsTo": "online-superbundle.package.js"
+}]
