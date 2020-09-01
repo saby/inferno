@@ -1659,31 +1659,20 @@ function mountFunctionalComponentCallbacks(props, ref, vNode, lifecycle) {
     }
 }
 
-function replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, isRootStart) {
+function replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle) {
     unmount(lastVNode);
     if ((nextVNode.flags & lastVNode.flags & 2033 /* DOMRef */) !== 0) {
-        // If we have controlNode, that starts not at the root HTMLElement and markup of this node is not the same
-        // as current dom, we have to remove current dom entirely and insert next markup in DOM
-        if (isRootStart && lastVNode.dom === parentDOM) {
-            mount(nextVNode, parentDOM, context, isSVG, null, lifecycle);
-            if (parentDOM.parentNode) {
-                // @ts-ignore
-                removeVNodeDOM(lastVNode, parentDOM.parentNode);
-            }
-        }
-        else {
-            // Single DOM operation, when we have dom references available
-            mount(nextVNode, null, context, isSVG, null, lifecycle);
-            // Single DOM operation, when we have dom references available
-            replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
-        }
+        // Single DOM operation, when we have dom references available
+        mount(nextVNode, null, context, isSVG, null, lifecycle);
+        // Single DOM operation, when we have dom references available
+        replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
     }
     else {
         mount(nextVNode, parentDOM, context, isSVG, findDOMfromVNode(lastVNode, true), lifecycle);
         removeVNodeDOM(lastVNode, parentDOM);
     }
 }
-function patch(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecycle, isRootStart) {
+function patch(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecycle) {
     var nextFlags = (nextVNode.flags |= 16384 /* InUse */);
     {
         if (isFunction(options.componentComparator) && lastVNode.flags & nextFlags & 4 /* ComponentClass */) {
@@ -1695,7 +1684,7 @@ function patch(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode, lifecy
     }
     if (lastVNode.flags !== nextFlags || lastVNode.type !== nextVNode.type || lastVNode.key !== nextVNode.key || (nextFlags & 2048 /* ReCreate */) !== 0) {
         if (lastVNode.flags & 16384 /* InUse */) {
-            replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, isRootStart);
+            replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle);
         }
         else {
             var dom = lastVNode.dom;
@@ -2411,7 +2400,7 @@ function __render(input, parentDOM, callback, context, isRootStart) {
             if (input.flags & 16384 /* InUse */) {
                 input = directClone(input);
             }
-            patch(rootInput, input, parentDOM, context, false, null, lifecycle, isRootStart);
+            patch(rootInput, input, parentDOM, context, false, null, lifecycle);
             rootInput = parentDOM.$V = input;
         }
     }
