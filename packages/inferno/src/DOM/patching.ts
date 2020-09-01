@@ -12,24 +12,14 @@ import { validateKeys } from '../core/validate';
 import { mountRef, unmountRef } from '../core/refs';
 
 
-function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[], isRootStart?: boolean) {
+function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean, lifecycle: Function[]) {
   unmount(lastVNode);
 
   if ((nextVNode.flags & lastVNode.flags & VNodeFlags.DOMRef) !== 0) {
-    // If we have controlNode, that starts not at the root HTMLElement and markup of this node is not the same
-    // as current dom, we have to remove current dom entirely and insert next markup in DOM
-    if (isRootStart && lastVNode.dom === parentDOM) {
-      mount(nextVNode, parentDOM, context, isSVG, null, lifecycle);
-      if (parentDOM.parentNode) {
-        // @ts-ignore
-        removeVNodeDOM(lastVNode, parentDOM.parentNode);
-      }
-    } else {
-      // Single DOM operation, when we have dom references available
-      mount(nextVNode, null, context, isSVG, null, lifecycle);
-      // Single DOM operation, when we have dom references available
-      replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
-    }
+    // Single DOM operation, when we have dom references available
+    mount(nextVNode, null, context, isSVG, null, lifecycle);
+    // Single DOM operation, when we have dom references available
+    replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
   } else {
     mount(nextVNode, parentDOM, context, isSVG, findDOMfromVNode(lastVNode, true), lifecycle);
     removeVNodeDOM(lastVNode, parentDOM);
@@ -43,8 +33,7 @@ export function patch(
   context: Object,
   isSVG: boolean,
   nextNode: Element | null,
-  lifecycle: Function[],
-  isRootStart?: boolean
+  lifecycle: Function[]
 ) {
   const nextFlags = (nextVNode.flags |= VNodeFlags.InUse);
 
@@ -59,7 +48,7 @@ export function patch(
 
   if (lastVNode.flags !== nextFlags || lastVNode.type !== nextVNode.type || lastVNode.key !== nextVNode.key || (nextFlags & VNodeFlags.ReCreate) !== 0) {
     if (lastVNode.flags & VNodeFlags.InUse) {
-      replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle, isRootStart);
+      replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lifecycle);
     } else {
       let dom = lastVNode.dom as Element;
       if (!dom && parentDOM) {
