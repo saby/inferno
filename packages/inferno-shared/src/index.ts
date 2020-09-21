@@ -75,7 +75,7 @@ export function combineFrom(first: {} | null, second: {} | null): object {
 const translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
 const translate = {"nbsp": String.fromCharCode(160),"amp" : "&","quot": "\"","apos": "'","lt"  : "<","gt"  : ">"};
 
-export function unescape(s: any, noNeedUnescape: boolean = false): string {
+export function unescape(s: any, noNeedUnescape: boolean = true): string {
   if (!s || !s.replace || noNeedUnescape) {
     return s;
   }
