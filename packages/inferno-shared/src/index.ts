@@ -75,15 +75,18 @@ export function combineFrom(first: {} | null, second: {} | null): object {
 const translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
 const translate = {"nbsp": String.fromCharCode(160),"amp" : "&","quot": "\"","apos": "'","lt"  : "<","gt"  : ">"};
 
-export function unescape(s: any, noNeedUnescape: boolean = true): string {
+export function unescape(s: any, noNeedUnescape: boolean = false): string {
   if (!s || !s.replace || noNeedUnescape) {
     return s;
   }
   // @ts-ignore
-  s = unEscapeASCII(s);
+  let result = unEscapeASCII(s);
   // @ts-ignore
-  return ( s.replace(translate_re, function(match, entity) {
+  result = ( s.replace(translate_re, function(match, entity) {
     return translate[entity];
   }) );
-
+  if (result !== s) {
+    console.error('unescaped');
+  }
+  return result;
 }

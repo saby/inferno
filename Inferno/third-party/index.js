@@ -61,17 +61,21 @@ function combineFrom(first, second) {
 var translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
 var translate = { "nbsp": String.fromCharCode(160), "amp": "&", "quot": "\"", "apos": "'", "lt": "<", "gt": ">" };
 function unescape(s, noNeedUnescape) {
-    if ( noNeedUnescape === void 0 ) { noNeedUnescape = true; }
+    if ( noNeedUnescape === void 0 ) { noNeedUnescape = false; }
 
     if (!s || !s.replace || noNeedUnescape) {
         return s;
     }
     // @ts-ignore
-    s = unEscapeASCII(s);
+    var result = unEscapeASCII(s);
     // @ts-ignore
-    return (s.replace(translate_re, function (match, entity) {
+    result = (s.replace(translate_re, function (match, entity) {
         return translate[entity];
     }));
+    if (result !== s) {
+        console.error('unescaped');
+    }
+    return result;
 }
 
 // We need EMPTY_OBJ defined in one place.
