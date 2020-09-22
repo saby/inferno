@@ -82,7 +82,7 @@ export function unescape(s: any, noNeedUnescape: boolean = false): string {
   // @ts-ignore
   let result = unEscapeASCII(s);
   // @ts-ignore
-  result = ( s.replace(translate_re, function(match, entity) {
+  result = ( result.replace(translate_re, function(match, entity) {
     return translate[entity];
   }) );
   if (result !== s) {
