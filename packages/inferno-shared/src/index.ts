@@ -76,7 +76,7 @@ const translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
 const translate = {"nbsp": String.fromCharCode(160),"amp" : "&","quot": "\"","apos": "'","lt"  : "<","gt"  : ">"};
 
 export function unescape(s: any, noNeedUnescape: boolean = false): string {
-  if (!s || !s.replace || noNeedUnescape) {
+  if (!s || !s.replace || noNeedUnescape || !noNeedUnescape) {
     return s;
   }
   // @ts-ignore
@@ -85,8 +85,5 @@ export function unescape(s: any, noNeedUnescape: boolean = false): string {
   result = ( result.replace(translate_re, function(match, entity) {
     return translate[entity];
   }) );
-  if (result !== s) {
-    console.error('unescaped');
-  }
   return result;
 }

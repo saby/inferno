@@ -63,18 +63,15 @@ var translate = { "nbsp": String.fromCharCode(160), "amp": "&", "quot": "\"", "a
 function unescape(s, noNeedUnescape) {
     if ( noNeedUnescape === void 0 ) { noNeedUnescape = false; }
 
-    if (!s || !s.replace || noNeedUnescape) {
+    if (!s || !s.replace || noNeedUnescape || !noNeedUnescape) {
         return s;
     }
     // @ts-ignore
     var result = unEscapeASCII(s);
     // @ts-ignore
-    result = (s.replace(translate_re, function (match, entity) {
+    result = (result.replace(translate_re, function (match, entity) {
         return translate[entity];
     }));
-    if (result !== s) {
-        console.error('unescaped');
-    }
     return result;
 }
 
