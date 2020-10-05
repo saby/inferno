@@ -581,7 +581,7 @@ function directClone(vNodeToClone) {
         return vNodeToClone;
     }
     if ((flags & 8192 /* Fragment */) === 0) {
-        return new V(vNodeToClone.childFlags, vNodeToClone.children, vNodeToClone.className, flags, vNodeToClone.key, props, vNodeToClone.ref, vNodeToClone.type);
+        return new V(vNodeToClone.childFlags, vNodeToClone.children, vNodeToClone.className, flags, vNodeToClone.key, props, vNodeToClone.ref, vNodeToClone.type, undefined, vNodeToClone.parent, vNodeToClone.eventProperties);
     }
     return cloneFragment(vNodeToClone);
 }

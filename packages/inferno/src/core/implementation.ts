@@ -230,7 +230,10 @@ export function directClone(vNodeToClone: VNode): VNode {
       vNodeToClone.key,
       props,
       vNodeToClone.ref,
-      vNodeToClone.type
+      vNodeToClone.type,
+      undefined,
+      vNodeToClone.parent,
+      vNodeToClone.eventProperties
     ) as VNode;
   }
   return cloneFragment(vNodeToClone);
