@@ -417,7 +417,7 @@ function V(childFlags, children, className, flags, key, props, ref, type, markup
     this.dom = null;
     this.flags = flags;
     this.key = key === void 0 ? null : key;
-    this.props = props === void 0 ? null : props;2
+    this.props = props === void 0 ? null : props;
     this.ref = ref === void 0 ? null : ref;
     this.type = type;
     this.markup = markup;
