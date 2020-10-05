@@ -407,7 +407,7 @@ function throwIfObjectIsNotVNode(input) {
 }
 
 var keyPrefix = '$';
-function V(childFlags, children, className, flags, key, props, ref, type, markup) {
+function V(childFlags, children, className, flags, key, props, ref, type, markup, parent, eventProperties) {
     {
         this.isValidated = false;
     }
@@ -417,10 +417,12 @@ function V(childFlags, children, className, flags, key, props, ref, type, markup
     this.dom = null;
     this.flags = flags;
     this.key = key === void 0 ? null : key;
-    this.props = props === void 0 ? null : props;
+    this.props = props === void 0 ? null : props;2
     this.ref = ref === void 0 ? null : ref;
     this.type = type;
     this.markup = markup;
+    this.parent = parent;
+    this.eventProperties = eventProperties;
 }
 function createVNode(flags, type, className, children, childFlags, props, key, ref, markup) {
     {
