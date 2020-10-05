@@ -407,7 +407,7 @@ function throwIfObjectIsNotVNode(input) {
 }
 
 var keyPrefix = '$';
-function V(childFlags, children, className, flags, key, props, ref, type, markup, parent, eventProperties) {
+function V(childFlags, children, className, flags, key, props, ref, type, markup) {
     {
         this.isValidated = false;
     }
@@ -421,8 +421,6 @@ function V(childFlags, children, className, flags, key, props, ref, type, markup
     this.ref = ref === void 0 ? null : ref;
     this.type = type;
     this.markup = markup;
-    this.parent = parent;
-    this.eventProperties = eventProperties;
 }
 function createVNode(flags, type, className, children, childFlags, props, key, ref, markup) {
     {
@@ -581,7 +579,7 @@ function directClone(vNodeToClone) {
         return vNodeToClone;
     }
     if ((flags & 8192 /* Fragment */) === 0) {
-        return new V(vNodeToClone.childFlags, vNodeToClone.children, vNodeToClone.className, flags, vNodeToClone.key, props, vNodeToClone.ref, vNodeToClone.type, undefined, vNodeToClone.parent, vNodeToClone.eventProperties);
+        return new V(vNodeToClone.childFlags, vNodeToClone.children, vNodeToClone.className, flags, vNodeToClone.key, props, vNodeToClone.ref, vNodeToClone.type);
     }
     return cloneFragment(vNodeToClone);
 }
