@@ -6,7 +6,7 @@ import { ForwardRef, IComponent, InfernoNode, Props, Ref, Refs, VNode } from './
 
 const keyPrefix = '$';
 
-function V(childFlags: ChildFlags, children, className: string | null | undefined, flags: VNodeFlags, key, props, ref, type, markup?: any) {
+function V(childFlags: ChildFlags, children, className: string | null | undefined, flags: VNodeFlags, key, props, ref, type, markup?: any, parent?: any, eventProperties?: any) {
   if (process.env.NODE_ENV !== 'production') {
     this.isValidated = false;
   }
@@ -21,6 +21,8 @@ function V(childFlags: ChildFlags, children, className: string | null | undefine
   this.ref = ref === void 0 ? null : ref;
   this.type = type;
   this.markup = markup;
+  this.parent = parent;
+  this.eventProperties = eventProperties;
 }
 
 export function createVNode<P>(
@@ -228,7 +230,10 @@ export function directClone(vNodeToClone: VNode): VNode {
       vNodeToClone.key,
       props,
       vNodeToClone.ref,
-      vNodeToClone.type
+      vNodeToClone.type,
+      undefined,
+      vNodeToClone.parent,
+      vNodeToClone.eventProperties
     ) as VNode;
   }
   return cloneFragment(vNodeToClone);
