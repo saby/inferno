@@ -172,7 +172,7 @@ function searchForExtension(domProperty) {
 function ignoreExtensionScripts(dom) {
   return dom &&
      dom.tagName === 'SCRIPT' &&
-     (searchForExtension(dom.innerText) || searchForExtension(dom.getAttribute('src')));
+     (searchForExtension(dom.textContent) || searchForExtension(dom.getAttribute('src')));
 }
 
 function ignoreExtensionCSS(dom) {
