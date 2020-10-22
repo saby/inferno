@@ -1228,7 +1228,9 @@ function patchStyle(lastAttrValue, nextAttrValue, dom) {
     var style;
     var value;
     if (isString(nextAttrValue)) {
-        domStyle.cssText = nextAttrValue;
+        if (domStyle.cssText !== nextAttrValue) {
+            domStyle.cssText = nextAttrValue;
+        }
         return;
     }
     if (!isNullOrUndef(lastAttrValue) && !isString(lastAttrValue)) {
@@ -1284,7 +1286,10 @@ function patchProp(prop, lastValue, nextValue, dom, isSVG, hasControlledValue, l
         case 'scoped':
         case 'seamless':
         case 'selected':
-            dom[prop] = !!nextValue;
+            var booleanNextValue = !!nextValue;
+            if (dom[prop] !== booleanNextValue) {
+                dom[prop] = booleanNextValue;
+            }
             break;
         case 'defaultChecked':
         case 'value':
@@ -1348,7 +1353,10 @@ function patchProp(prop, lastValue, nextValue, dom, isSVG, hasControlledValue, l
                 dom.setAttributeNS(namespaces[prop], prop, nextValue);
             }
             else {
-                dom.setAttribute(prop, unescape(nextValue));
+                nextValue = unescape(nextValue);
+                if (dom.getAttribute(prop) !== nextValue) {
+                    dom.setAttribute(prop, nextValue);
+                }
             }
             break;
     }
