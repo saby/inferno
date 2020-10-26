@@ -47,6 +47,7 @@ export function patchStyle(lastAttrValue, nextAttrValue, dom) {
   let style;
   let value;
   if (isString(nextAttrValue)) {
+    // Do not overwrite unchanged cssText for optimization.
     if (domStyle.cssText !== nextAttrValue) {
       domStyle.cssText = nextAttrValue;
     }
@@ -108,6 +109,8 @@ export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boole
     case 'seamless':
     case 'selected':
       const booleanNextValue = !!nextValue;
+
+      // Do not overwrite unchanged property for optimization.
       if (dom[prop] !== booleanNextValue) {
         dom[prop] = booleanNextValue;
       }
@@ -174,6 +177,8 @@ export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boole
         dom.setAttributeNS(namespaces[prop], prop, nextValue);
       } else {
         nextValue = unescape(nextValue);
+
+        // Do not overwrite unchanged attribute for optimization.
         if (dom.getAttribute(prop) !== nextValue) {
           dom.setAttribute(prop, nextValue);
         }
