@@ -216,9 +216,10 @@ function hydrateElement(vNode: VNode, parentDOM: Element, dom: Element, context:
   const ref = vNode.ref;
 
   isSVG = isSVG || (flags & VNodeFlags.SvgElement) > 0;
-  if (dom.nodeType !== 1 || dom.tagName.toLowerCase() !== vNode.type) {
+  if (dom.nodeType !== 1 || dom.tagName.toLowerCase() !== vNode.type.toLowerCase()) {
     if (process.env.NODE_ENV !== 'production') {
-      warning("Inferno hydration: Server-side markup doesn't match client-side markup");
+      warning(`Inferno hydration: разметка на сервере и клиенте не совпала. 
+            DOMNode: ${dom.tagName}, VNODE: ${vNode.type}`);
     }
     _ME(vNode, null, context, isSVG, null, lifecycle);
     if (isRootStart) {
