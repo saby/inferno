@@ -1228,7 +1228,10 @@ function patchStyle(lastAttrValue, nextAttrValue, dom) {
     var style;
     var value;
     if (isString(nextAttrValue)) {
-        domStyle.cssText = nextAttrValue;
+        // Do not overwrite unchanged cssText for optimization.
+        if (domStyle.cssText !== nextAttrValue) {
+            domStyle.cssText = nextAttrValue;
+        }
         return;
     }
     if (!isNullOrUndef(lastAttrValue) && !isString(lastAttrValue)) {
@@ -1284,7 +1287,11 @@ function patchProp(prop, lastValue, nextValue, dom, isSVG, hasControlledValue, l
         case 'scoped':
         case 'seamless':
         case 'selected':
-            dom[prop] = !!nextValue;
+            var booleanNextValue = !!nextValue;
+            // Do not overwrite unchanged property for optimization.
+            if (dom[prop] !== booleanNextValue) {
+                dom[prop] = booleanNextValue;
+            }
             break;
         case 'defaultChecked':
         case 'value':
@@ -1348,7 +1355,11 @@ function patchProp(prop, lastValue, nextValue, dom, isSVG, hasControlledValue, l
                 dom.setAttributeNS(namespaces[prop], prop, nextValue);
             }
             else {
-                dom.setAttribute(prop, unescape(nextValue));
+                nextValue = unescape(nextValue);
+                // Do not overwrite unchanged attribute for optimization.
+                if (dom.getAttribute(prop) !== nextValue) {
+                    dom.setAttribute(prop, nextValue);
+                }
             }
             break;
     }
