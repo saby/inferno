@@ -47,7 +47,10 @@ export function patchStyle(lastAttrValue, nextAttrValue, dom) {
   let style;
   let value;
   if (isString(nextAttrValue)) {
-    domStyle.cssText = nextAttrValue;
+    // Do not overwrite unchanged cssText for optimization.
+    if (domStyle.cssText !== nextAttrValue) {
+      domStyle.cssText = nextAttrValue;
+    }
     return;
   }
 
@@ -105,7 +108,12 @@ export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boole
     case 'scoped':
     case 'seamless':
     case 'selected':
-      dom[prop] = !!nextValue;
+      const booleanNextValue = !!nextValue;
+
+      // Do not overwrite unchanged property for optimization.
+      if (dom[prop] !== booleanNextValue) {
+        dom[prop] = booleanNextValue;
+      }
       break;
     case 'defaultChecked':
     case 'value':
@@ -168,7 +176,12 @@ export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boole
         // If we end up in this path we can read property again
         dom.setAttributeNS(namespaces[prop], prop, nextValue);
       } else {
-        dom.setAttribute(prop, unescape(nextValue));
+        nextValue = unescape(nextValue);
+
+        // Do not overwrite unchanged attribute for optimization.
+        if (dom.getAttribute(prop) !== nextValue) {
+          dom.setAttribute(prop, nextValue);
+        }
       }
       break;
   }
