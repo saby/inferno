@@ -20,9 +20,9 @@ function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: O
     // as current dom, we have to remove current dom entirely and insert next markup in DOM
     if (isRootStart && lastVNode.dom === parentDOM) {
       mount(nextVNode, parentDOM, context, isSVG, null, lifecycle);
-      if (parentDOM.parentNode) {
-        // @ts-ignore
-        removeVNodeDOM(lastVNode, parentDOM.parentNode);
+      const lastChildren: VNode[] = lastVNode.children;
+      for (let i = 0; i < lastChildren.length; i++) {
+        removeVNodeDOM(lastChildren[i], parentDOM);
       }
     } else {
       // Single DOM operation, when we have dom references available
