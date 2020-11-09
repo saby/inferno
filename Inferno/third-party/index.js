@@ -1677,6 +1677,7 @@ function replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG, lif
         // as current dom, we have to remove current dom entirely and insert next markup in DOM
         if (isRootStart && lastVNode.dom === parentDOM) {
             mount(nextVNode, parentDOM, context, isSVG, null, lifecycle);
+            // The mount method doesn't add new root, only redraw the last one. So remove only last children.
             var lastChildren = lastVNode.children;
             for (var i = 0; i < lastChildren.length; i++) {
                 removeVNodeDOM(lastChildren[i], parentDOM);
