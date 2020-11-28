@@ -39,15 +39,16 @@ var translate = { "nbsp": String.fromCharCode(160), "amp": "&", "quot": "\"", "a
 function unescape(s, noNeedUnescape) {
     if ( noNeedUnescape === void 0 ) { noNeedUnescape = false; }
 
-    if (!s || !s.replace || noNeedUnescape) {
+    if (!s || !s.replace || noNeedUnescape || !noNeedUnescape) {
         return s;
     }
     // @ts-ignore
-    s = unEscapeASCII(s);
+    var result = unEscapeASCII(s);
     // @ts-ignore
-    return (s.replace(translate_re, function (match, entity) {
+    result = (result.replace(translate_re, function (match, entity) {
         return translate[entity];
     }));
+    return result;
 }
 
 function checkIfHydrationNeeded(sibling) {

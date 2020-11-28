@@ -76,14 +76,14 @@ const translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
 const translate = {"nbsp": String.fromCharCode(160),"amp" : "&","quot": "\"","apos": "'","lt"  : "<","gt"  : ">"};
 
 export function unescape(s: any, noNeedUnescape: boolean = false): string {
-  if (!s || !s.replace || noNeedUnescape) {
+  if (!s || !s.replace || noNeedUnescape || !noNeedUnescape) {
     return s;
   }
   // @ts-ignore
-  s = unEscapeASCII(s);
+  let result = unEscapeASCII(s);
   // @ts-ignore
-  return ( s.replace(translate_re, function(match, entity) {
+  result = ( result.replace(translate_re, function(match, entity) {
     return translate[entity];
   }) );
-
+  return result;
 }
