@@ -1,4 +1,4 @@
-import { isFunction, isNull, isNullOrUndef, isString, isStringOrNumber, throwError, unescape } from 'inferno-shared';
+import { isFunction, isNull, isNullOrUndef, isString, isStringOrNumber, throwError } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { createVoidVNode, directClone } from '../core/implementation';
 import { VNode } from '../core/types';
@@ -84,7 +84,7 @@ function mountFragment(vNode, parentDOM, context, isSVG, nextNode, lifecycle: Fu
 }
 
 export function mountText(vNode: VNode, parentDOM: Element | null, nextNode: Element | null): void {
-  const dom = (vNode.dom = document.createTextNode(unescape(vNode.children as string, (vNode as any).noNeedUnescape)) as any);
+  const dom = (vNode.dom = document.createTextNode(vNode.children as string) as any);
 
   if (!isNull(parentDOM)) {
     insertOrAppend(parentDOM, dom, nextNode);

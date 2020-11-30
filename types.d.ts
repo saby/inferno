@@ -74,7 +74,6 @@ declare module "Inferno/third-party/index" {
     dom: Element | null;
     props: WasabyProperties['attributes'];
     hprops: WasabyProperties;
-    noNeedUnescape: boolean;
   }
   export function createVNode(
     flags: VNode['flags'],

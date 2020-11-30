@@ -34,21 +34,6 @@ function warning(message) {
     // @ts-ignore
     Logger.info('Inferno core - ' + message);
 }
-var translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
-var translate = { "nbsp": String.fromCharCode(160), "amp": "&", "quot": "\"", "apos": "'", "lt": "<", "gt": ">" };
-function unescape(s, noNeedUnescape) {
-    if ( noNeedUnescape === void 0 ) { noNeedUnescape = false; }
-
-    if (!s || !s.replace || noNeedUnescape) {
-        return s;
-    }
-    // @ts-ignore
-    s = unEscapeASCII(s);
-    // @ts-ignore
-    return (s.replace(translate_re, function (match, entity) {
-        return translate[entity];
-    }));
-}
 
 function checkIfHydrationNeeded(sibling) {
     // @ts-ignore
@@ -300,7 +285,7 @@ function hydrateText(vNode, parentDOM, dom) {
         parentDOM.replaceChild(vNode.dom, dom);
     }
     else {
-        var text = unescape(vNode.children, vNode.noNeedUnescape);
+        var text = vNode.children;
         if (dom.nodeValue !== text) {
             dom.nodeValue = text;
         }
