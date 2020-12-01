@@ -58,21 +58,6 @@ function combineFrom(first, second) {
     }
     return out;
 }
-var translate_re = /&(nbsp|amp|quot|apos|lt|gt);/g;
-var translate = { "nbsp": String.fromCharCode(160), "amp": "&", "quot": "\"", "apos": "'", "lt": "<", "gt": ">" };
-function unescape(s, noNeedUnescape) {
-    if ( noNeedUnescape === void 0 ) { noNeedUnescape = false; }
-
-    if (!s || !s.replace || noNeedUnescape) {
-        return s;
-    }
-    // @ts-ignore
-    s = unEscapeASCII(s);
-    // @ts-ignore
-    return (s.replace(translate_re, function (match, entity) {
-        return translate[entity];
-    }));
-}
 
 // We need EMPTY_OBJ defined in one place.
 // Its used for comparison so we cant inline it into shared
@@ -1355,7 +1340,6 @@ function patchProp(prop, lastValue, nextValue, dom, isSVG, hasControlledValue, l
                 dom.setAttributeNS(namespaces[prop], prop, nextValue);
             }
             else {
-                nextValue = unescape(nextValue);
                 // Do not overwrite unchanged attribute for optimization.
                 if (dom.getAttribute(prop) !== nextValue) {
                     dom.setAttribute(prop, nextValue);
@@ -1536,7 +1520,7 @@ function mountFragment(vNode, parentDOM, context, isSVG, nextNode, lifecycle) {
     }
 }
 function mountText(vNode, parentDOM, nextNode) {
-    var dom = (vNode.dom = document.createTextNode(unescape(vNode.children, vNode.noNeedUnescape)));
+    var dom = (vNode.dom = document.createTextNode(vNode.children));
     if (!isNull(parentDOM)) {
         insertOrAppend(parentDOM, dom, nextNode);
     }
@@ -2061,7 +2045,7 @@ function patchFunctionalComponent(lastVNode, nextVNode, parentDOM, context, isSV
 // @ts-ignore
 var ie10or11 = Env.detection.isIE10 || Env.detection.isIE11;
 function patchText(lastVNode, nextVNode, parentDOM) {
-    var nextText = unescape(nextVNode.children, nextVNode.noNeedUnescape);
+    var nextText = nextVNode.children;
     var dom = lastVNode.dom;
     if (nextText !== lastVNode.children && lastVNode.children !== nextVNode.children) {
         // inner text has to be just for IE 10 and for EmptyTextNode

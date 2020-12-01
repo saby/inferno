@@ -1,4 +1,4 @@
-import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning, unescape } from 'inferno-shared';
+import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render, _PS } from 'inferno';
 
@@ -274,7 +274,7 @@ function hydrateText(vNode: VNode, parentDOM: Element, dom: Element) {
     _MT(vNode, null, null);
     parentDOM.replaceChild(vNode.dom as Element, dom);
   } else {
-    const text = unescape(vNode.children, (vNode as any).noNeedUnescape);
+    const text = vNode.children;
 
     if (dom.nodeValue !== text) {
       dom.nodeValue = text as string;
