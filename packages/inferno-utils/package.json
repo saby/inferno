@@ -1,0 +1,16 @@
+{
+   "name": "inferno-utils",
+   "version": "23.4000.0",
+   "description": "Meta test utilities which are not for userland",
+   "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+   },
+   "devDependencies": {
+      "inferno-shared": "6.2.1",
+      "inferno-vnode-flags": "6.2.1"
+   },
+   "keywords": [],
+   "author": "",
+   "license": "ISC",
+   "private": true
+}
