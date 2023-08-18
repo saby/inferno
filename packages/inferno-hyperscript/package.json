@@ -1,0 +1,37 @@
+{
+   "name": "inferno-hyperscript",
+   "version": "23.5000.0",
+   "license": "MIT",
+   "description": "Bridging hyperscript to InfernoJS",
+   "author": "Terin Stock <terinjokes@gmail.com> (https://terinstock.com/)",
+   "bugs": {
+      "url": "https://github.com/infernojs/inferno/issues"
+   },
+   "homepage": "https://github.com/infernojs/inferno#readme",
+   "main": "index.js",
+   "module": "dist/index.esm.js",
+   "dev:module": "dist/index.dev.esm.js",
+   "typings": "dist/index.d.ts",
+   "keywords": [
+      "inferno",
+      "hyperscript"
+   ],
+   "repository": "https://github.com/infernojs/inferno",
+   "dependencies": {
+      "inferno": "6.2.1"
+   },
+   "devDependencies": {
+      "inferno-shared": "6.2.1",
+      "inferno-vnode-flags": "6.2.1"
+   },
+   "rollup": {
+      "bundledDependencies": [
+         "inferno-shared",
+         "inferno-vnode-flags"
+      ],
+      "moduleName": "Inferno",
+      "moduleGlobals": {
+         "inferno": "Inferno"
+      }
+   }
+}
