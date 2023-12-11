@@ -1,0 +1,11 @@
+{
+  "command": {
+    "init": {
+      "exact": true
+    }
+  },
+  "packages": [
+    "packages/*"
+  ],
+  "version": "6.2.1"
+}
